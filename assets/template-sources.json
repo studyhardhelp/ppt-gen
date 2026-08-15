@@ -12,6 +12,9 @@
       "route": "html",
       "kind": "template-library",
       "license": "MIT",
+      "counts": {
+        "templates": 34
+      },
       "best_for": "General business, editorial, creative, and product HTML decks",
       "features": [
         "34 self-contained visual systems",
@@ -30,6 +33,9 @@
       "route": "html",
       "kind": "template-library",
       "license": "MIT",
+      "counts": {
+        "templates": 54
+      },
       "best_for": "Business, research, training, education, nonprofit, real-estate, travel, and executive decks",
       "features": [
         "54 browser-openable templates",
@@ -48,6 +54,10 @@
       "route": "html",
       "kind": "template-library",
       "license": "MIT",
+      "counts": {
+        "themes": 23,
+        "layouts": 25
+      },
       "best_for": "Fast proposals, launches, research briefs, workshops, reports, and social decks",
       "features": [
         "23 visual themes",
@@ -66,6 +76,9 @@
       "route": "marp",
       "kind": "template-library",
       "license": "MIT",
+      "counts": {
+        "themes": 50
+      },
       "best_for": "Markdown-first talks, technical presentations, training, and version-controlled decks",
       "features": [
         "50 themes",
@@ -84,6 +97,10 @@
       "route": "html",
       "kind": "branded-template",
       "license": "MIT",
+      "counts": {
+        "templates": 1,
+        "layouts": 8
+      },
       "best_for": "Authorized CUHK-themed academic talks and university presentations",
       "features": [
         "Single-file HTML deck",
@@ -103,6 +120,9 @@
       "route": "html",
       "kind": "branded-template",
       "license": "MIT",
+      "counts": {
+        "templates": 1
+      },
       "best_for": "Authorized Fudan-themed academic presentations",
       "features": [
         "University-styled HTML presentation template",
@@ -120,6 +140,9 @@
       "route": "native-pptx",
       "kind": "template-engine",
       "license": "MIT",
+      "counts": {
+        "templates": 1
+      },
       "best_for": "Generating editable decks from real PowerPoint slide-master layouts",
       "features": [
         "Profiles template masters and layouts",
@@ -174,6 +197,9 @@
       "route": "native-pptx",
       "kind": "example-gallery",
       "license": "MIT",
+      "counts": {
+        "example_decks": 21
+      },
       "best_for": "Studying editable PPTX composition patterns and starting from a custom template workflow",
       "features": [
         "Twenty-plus rendered PPTX examples",
@@ -181,7 +207,207 @@
         "Custom template and slide-master support"
       ],
       "entrypoint": "Inspect examples and documentation; reuse design principles rather than copying example content"
+    },
+    {
+      "id": "deckmason",
+      "name": "DeckMason",
+      "repo": "https://github.com/a692570/deckmason",
+      "clone_url": "https://github.com/a692570/deckmason.git",
+      "ref": "main",
+      "route": "html",
+      "kind": "template-library",
+      "license": "MIT",
+      "counts": {
+        "themes": 31
+      },
+      "best_for": "General-purpose HTML presentations with selectable visual themes",
+      "features": [
+        "31 theme directories",
+        "HTML-first presentation workflow",
+        "Reusable theme catalog"
+      ],
+      "entrypoint": "Inspect the theme catalog and repository instructions before selecting a theme"
+    },
+    {
+      "id": "slidev-templates",
+      "name": "Neko Slidev Template",
+      "repo": "https://github.com/iridite/slidev-templates",
+      "clone_url": "https://github.com/iridite/slidev-templates.git",
+      "ref": "main",
+      "route": "slidev",
+      "kind": "template-library",
+      "license": "MIT",
+      "counts": {
+        "templates": 1
+      },
+      "best_for": "Developer talks and playful Slidev presentations using a Neko visual style",
+      "features": [
+        "One complete Slidev template",
+        "Markdown and Vue component workflow",
+        "Browser presentation and export support through Slidev"
+      ],
+      "entrypoint": "Inspect the template package and Slidev configuration before adapting it"
+    },
+    {
+      "id": "neobeam",
+      "name": "NeoBeam",
+      "repo": "https://github.com/mikael-ros/neobeam",
+      "clone_url": "https://github.com/mikael-ros/neobeam.git",
+      "ref": "main",
+      "route": "marp",
+      "kind": "template-library",
+      "license": "MIT",
+      "counts": {
+        "themes": 1
+      },
+      "best_for": "Modern Markdown-first presentations using a focused Marp theme",
+      "features": [
+        "One reusable Marp theme",
+        "Markdown authoring",
+        "Marp export compatibility"
+      ],
+      "entrypoint": "Inspect the theme CSS and example Markdown before use"
+    },
+    {
+      "id": "marpx",
+      "name": "MarpX",
+      "repo": "https://github.com/cunhapaulo/MarpX",
+      "clone_url": "https://github.com/cunhapaulo/MarpX.git",
+      "ref": "main",
+      "route": "marp",
+      "kind": "template-library",
+      "license": "MIT",
+      "counts": {
+        "themes": 15
+      },
+      "best_for": "Markdown presentations needing a broad choice of named Marp themes",
+      "features": [
+        "15 named presentation themes",
+        "Shared CSS foundations and palette",
+        "Marp-compatible Markdown workflow"
+      ],
+      "entrypoint": "Select a named theme; treat base, constants, and palette CSS as support files rather than themes"
+    },
+    {
+      "id": "codebytes-marp-slides-template",
+      "name": "Codebytes Marp Slides Template",
+      "repo": "https://github.com/codebytes/marp-slides-template",
+      "clone_url": "https://github.com/codebytes/marp-slides-template.git",
+      "ref": "main",
+      "route": "marp",
+      "kind": "template-library",
+      "license": "MIT",
+      "counts": {
+        "themes": 4
+      },
+      "best_for": "Technical talks and code-focused Markdown slide decks",
+      "features": [
+        "Four CSS themes",
+        "Markdown-first authoring",
+        "Marp export workflow"
+      ],
+      "entrypoint": "Inspect the example deck and theme CSS files before selecting a style"
+    },
+    {
+      "id": "marp-theme-wave",
+      "name": "Marp Theme Wave",
+      "repo": "https://github.com/JuliusWiedemann/MarpThemeWave",
+      "clone_url": "https://github.com/JuliusWiedemann/MarpThemeWave.git",
+      "ref": "main",
+      "route": "marp",
+      "kind": "template-library",
+      "license": "MIT",
+      "counts": {
+        "themes": 1
+      },
+      "best_for": "Clean Markdown presentations using a wave-inspired Marp style",
+      "features": [
+        "One reusable Marp theme",
+        "Example slides",
+        "Marp-compatible exports"
+      ],
+      "entrypoint": "Inspect the theme CSS and example slides before adaptation"
+    },
+    {
+      "id": "academic-ppt-template",
+      "name": "Academic PPT Template",
+      "repo": "https://github.com/yctrrr/academic-ppt-template",
+      "clone_url": "https://github.com/yctrrr/academic-ppt-template.git",
+      "ref": "main",
+      "route": "native-pptx",
+      "kind": "template-library",
+      "license": "MIT",
+      "counts": {
+        "templates": 1
+      },
+      "best_for": "Academic reports and research presentations requiring an editable PowerPoint file",
+      "features": [
+        "Native academic-template.pptx asset",
+        "Editable PowerPoint workflow",
+        "Academic presentation styling"
+      ],
+      "entrypoint": "Inspect assets/academic-template.pptx masters, layouts, fonts, and placeholders before use"
+    },
+    {
+      "id": "bit-ppt-template",
+      "name": "BIT PPT Template",
+      "repo": "https://github.com/yang-kun-long/bit-ppt-template",
+      "clone_url": "https://github.com/yang-kun-long/bit-ppt-template.git",
+      "ref": "main",
+      "route": "native-pptx",
+      "kind": "branded-template",
+      "license": "MIT",
+      "counts": {
+        "templates": 1
+      },
+      "best_for": "Authorized Beijing Institute of Technology academic and institutional presentations",
+      "features": [
+        "Native PowerPoint template",
+        "Institutional visual style",
+        "Editable presentation assets"
+      ],
+      "entrypoint": "Inspect the PPTX masters, layouts, assets, and fonts before use",
+      "brand_notice": "Confirm authorization before using institutional logos or implying endorsement."
+    },
+    {
+      "id": "ppt-report-skills",
+      "name": "PPT Report Skills",
+      "repo": "https://github.com/myunwang/ppt-report-skills",
+      "clone_url": "https://github.com/myunwang/ppt-report-skills.git",
+      "ref": "main",
+      "route": "html",
+      "kind": "template-engine",
+      "license": "MIT",
+      "counts": {
+        "layouts": 19
+      },
+      "best_for": "Structured report decks assembled from reusable HTML slide layouts",
+      "features": [
+        "19 reusable slide-layout templates",
+        "Agent-oriented report workflow",
+        "HTML slide composition"
+      ],
+      "entrypoint": "Inspect the repository Skill and assets/slides-templates before composing a report"
+    },
+    {
+      "id": "seaslides",
+      "name": "SeaSlides",
+      "repo": "https://github.com/touying-typ/seaslides",
+      "clone_url": "https://github.com/touying-typ/seaslides.git",
+      "ref": "main",
+      "route": "html",
+      "kind": "template-library",
+      "license": "MIT",
+      "counts": {
+        "templates": 18
+      },
+      "best_for": "Browser-based presentations needing a varied collection of reusable themes",
+      "features": [
+        "18 template directories with theme metadata",
+        "Theme-oriented presentation workflow",
+        "Web-rendered output"
+      ],
+      "entrypoint": "Inspect each template directory and its theme.md before selecting a design"
     }
   ]
 }
-

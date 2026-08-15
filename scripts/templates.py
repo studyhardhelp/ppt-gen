@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import shutil
 import subprocess
@@ -70,6 +71,41 @@ def print_table(items: list[dict]) -> None:
         )
 
 
+def registry_stats(data: dict) -> dict:
+    items = data["templates"]
+    counts = Counter()
+    for item in items:
+        counts.update(item.get("counts", {}))
+
+    return {
+        "sources": len(items),
+        "template_assets": counts["templates"] + counts["themes"],
+        "templates": counts["templates"],
+        "themes": counts["themes"],
+        "layouts": counts["layouts"],
+        "example_decks": counts["example_decks"],
+        "by_route": dict(sorted(Counter(item["route"] for item in items).items())),
+        "by_kind": dict(sorted(Counter(item["kind"] for item in items).items())),
+        "by_license": dict(sorted(Counter(item["license"] for item in items).items())),
+    }
+
+
+def print_stats(stats: dict) -> None:
+    print(f"Sources: {stats['sources']}")
+    print(f"Templates/themes: {stats['template_assets']}")
+    print(f"  Templates: {stats['templates']}")
+    print(f"  Themes: {stats['themes']}")
+    print(f"Layouts: {stats['layouts']}")
+    print(f"Example decks: {stats['example_decks']}")
+    for field, label in (
+        ("by_route", "Routes"),
+        ("by_kind", "Kinds"),
+        ("by_license", "Licenses"),
+    ):
+        values = ", ".join(f"{key}={value}" for key, value in stats[field].items())
+        print(f"{label}: {values}")
+
+
 def clone(item: dict, destination: Path, timeout: int) -> str:
     git = shutil.which("git")
     if not git:
@@ -111,6 +147,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    stats_parser = subparsers.add_parser("stats", help="Summarize registry counts")
+    stats_parser.add_argument("--json", action="store_true")
+
     list_parser = subparsers.add_parser("list", help="List template sources")
     list_parser.add_argument("--route")
     list_parser.add_argument("--kind")
@@ -132,7 +171,13 @@ def main() -> int:
     data = load_registry()
 
     try:
-        if args.command == "list":
+        if args.command == "stats":
+            stats = registry_stats(data)
+            if args.json:
+                print(json.dumps(stats, indent=2, ensure_ascii=False))
+            else:
+                print_stats(stats)
+        elif args.command == "list":
             items = select(data, args.route, args.kind, None)
             if args.json:
                 print(json.dumps(items, indent=2, ensure_ascii=False))

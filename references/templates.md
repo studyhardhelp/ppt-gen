@@ -5,6 +5,8 @@ Use the bundled registry to discover permissively licensed template libraries an
 ## Commands
 
 ```bash
+python3 scripts/templates.py stats
+python3 scripts/templates.py stats --json
 python3 scripts/templates.py list
 python3 scripts/templates.py list --route html
 python3 scripts/templates.py search "academic html"
@@ -12,11 +14,13 @@ python3 scripts/templates.py show beautiful-html-templates
 python3 scripts/templates.py fetch beautiful-html-templates work/vendor/beautiful-html-templates
 ```
 
+As of 2026-08-15, the registry contains 20 permissively licensed GitHub sources: 237 concrete templates or themes, 52 reusable layouts, and 21 example decks. Template engines without a fixed bundled template are counted as sources but not as template assets. Run `stats` for the current machine-readable totals and route breakdown.
+
 `fetch` clones the selected source but never executes its scripts. Inspect the upstream README, `AGENTS.md`, dependencies, assets, and license before running commands or copying files.
 
 ## Selection workflow
 
-1. Decide whether the delivery route is native PPTX, HTML, or Marp.
+1. Decide whether the delivery route is native PPTX, HTML, Marp, or Slidev.
 2. Search by audience, subject, format, and editability rather than by color alone.
 3. Shortlist at most three candidates and inspect their actual previews and object structure.
 4. Confirm the repository license and any separate logo, trademark, font, image, or brand restrictions.
@@ -39,6 +43,16 @@ python3 scripts/templates.py fetch beautiful-html-templates work/vendor/beautifu
 | `pptx-template-skills` | Native PPTX | Template engine | MIT | Parse any user template into a semantic contract and refill it |
 | `competition-template-first` | Native PPTX | Template engine | MIT | Competition and defense decks with visual underlays plus editable evidence |
 | `ppt-master-examples` | Native PPTX | Example gallery | MIT | Study editable composition patterns and custom-template workflows |
+| `deckmason` | HTML | Template library | MIT | 31 selectable HTML themes |
+| `slidev-templates` | Slidev | Template library | MIT | One Neko-style Markdown and Vue template |
+| `neobeam` | Marp | Template library | MIT | One focused modern Marp theme |
+| `marpx` | Marp | Template library | MIT | 15 named Marp themes with shared foundations |
+| `codebytes-marp-slides-template` | Marp | Template library | MIT | Four CSS themes for technical presentations |
+| `marp-theme-wave` | Marp | Template library | MIT | One wave-inspired Marp theme |
+| `academic-ppt-template` | Native PPTX | Template library | MIT | Editable academic PowerPoint template |
+| `bit-ppt-template` | Native PPTX | Branded template | MIT | Authorized BIT academic presentations |
+| `ppt-report-skills` | HTML | Template engine | MIT | 19 reusable report slide layouts |
+| `seaslides` | HTML | Template library | MIT | 18 web presentation templates with theme metadata |
 
 The machine-readable source of truth is [assets/template-sources.json](../assets/template-sources.json).
 
@@ -54,7 +68,6 @@ The machine-readable source of truth is [assets/template-sources.json](../assets
 
 Prefer template engines over treating a PPTX as a flat background. Profile masters and layouts, map semantic content to real placeholders, and preserve theme colors, fonts, geometry, charts, notes, and relationships. Render the result after every substantial change.
 
-## HTML and Marp guidance
+## HTML, Marp, and Slidev guidance
 
 Use metadata to shortlist styles, then inspect real previews. Preserve the selected template's design tokens and signature compositions while replacing all example content. Freeze dependencies locally for final delivery and test the deck at the intended aspect ratio.
-
