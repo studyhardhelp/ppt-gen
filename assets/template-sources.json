@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-08-15",
+  "policy": "Only sources with an explicit permissive repository license are fetchable from this registry. Brand and university marks may have separate usage restrictions.",
+  "templates": [
+    {
+      "id": "beautiful-html-templates",
+      "name": "Beautiful HTML Templates",
+      "repo": "https://github.com/zarazhangrui/beautiful-html-templates",
+      "clone_url": "https://github.com/zarazhangrui/beautiful-html-templates.git",
+      "ref": "main",
+      "route": "html",
+      "kind": "template-library",
+      "license": "MIT",
+      "best_for": "General business, editorial, creative, and product HTML decks",
+      "features": [
+        "34 self-contained visual systems",
+        "Agent-readable index.json metadata",
+        "Cover, middle, and later-slide examples",
+        "AGENTS.md selection workflow"
+      ],
+      "entrypoint": "Read AGENTS.md and select from templates/*/metadata.json or index.json"
+    },
+    {
+      "id": "ai-slide-templates",
+      "name": "AI Slide Templates",
+      "repo": "https://github.com/cogine-ai/ai-slide-templates",
+      "clone_url": "https://github.com/cogine-ai/ai-slide-templates.git",
+      "ref": "main",
+      "route": "html",
+      "kind": "template-library",
+      "license": "MIT",
+      "best_for": "Business, research, training, education, nonprofit, real-estate, travel, and executive decks",
+      "features": [
+        "54 browser-openable templates",
+        "Per-template JSON metadata",
+        "Self-contained HTML output",
+        "Examples and Agent workflow"
+      ],
+      "entrypoint": "Read AGENTS.md and scan templates/*/template.json"
+    },
+    {
+      "id": "inspiration-deck-workshop",
+      "name": "Inspiration Deck Workshop",
+      "repo": "https://github.com/zjsthmjialin/inspiration-deck-workshop",
+      "clone_url": "https://github.com/zjsthmjialin/inspiration-deck-workshop.git",
+      "ref": "main",
+      "route": "html",
+      "kind": "template-library",
+      "license": "MIT",
+      "best_for": "Fast proposals, launches, research briefs, workshops, reports, and social decks",
+      "features": [
+        "23 visual themes",
+        "25 reusable page layouts",
+        "Complete deck starters",
+        "Local animated HTML output"
+      ],
+      "entrypoint": "Run node tools/cli.mjs new <name> --template <template> --theme <theme> only after inspecting the repository"
+    },
+    {
+      "id": "marp-slides-studio",
+      "name": "Marp Slides Studio",
+      "repo": "https://github.com/unsolublesugar/marp-slides-studio",
+      "clone_url": "https://github.com/unsolublesugar/marp-slides-studio.git",
+      "ref": "main",
+      "route": "marp",
+      "kind": "template-library",
+      "license": "MIT",
+      "best_for": "Markdown-first talks, technical presentations, training, and version-controlled decks",
+      "features": [
+        "50 themes",
+        "Reusable cover, metric, comparison, flow, screenshot, and code layouts",
+        "HTML, PDF, PPTX, and PNG export",
+        "Theme gallery and contrast checks"
+      ],
+      "entrypoint": "Inspect template/slides.md and themes; run npm commands only after repository review"
+    },
+    {
+      "id": "cuhk-slides-template-html",
+      "name": "CUHK Slides Template",
+      "repo": "https://github.com/HarlandZZC/cuhk-slides-template-html",
+      "clone_url": "https://github.com/HarlandZZC/cuhk-slides-template-html.git",
+      "ref": "main",
+      "route": "html",
+      "kind": "branded-template",
+      "license": "MIT",
+      "best_for": "Authorized CUHK-themed academic talks and university presentations",
+      "features": [
+        "Single-file HTML deck",
+        "Eight layouts",
+        "Purple and gold visual system",
+        "Markdown-to-slides companion skill"
+      ],
+      "entrypoint": "Inspect cuhk-template.html and the skills/md-to-cuhk-slides workflow",
+      "brand_notice": "Confirm authorization before using institutional logos or implying endorsement."
+    },
+    {
+      "id": "fudan-html-ppt-template",
+      "name": "Fudan HTML PPT Template",
+      "repo": "https://github.com/icytra/fudan-html-ppt-template",
+      "clone_url": "https://github.com/icytra/fudan-html-ppt-template.git",
+      "ref": "main",
+      "route": "html",
+      "kind": "branded-template",
+      "license": "MIT",
+      "best_for": "Authorized Fudan-themed academic presentations",
+      "features": [
+        "University-styled HTML presentation template",
+        "Agent Skill instructions"
+      ],
+      "entrypoint": "Inspect the repository SKILL.md and template files before adapting",
+      "brand_notice": "Confirm authorization before using institutional logos or implying endorsement."
+    },
+    {
+      "id": "pptx-from-layouts",
+      "name": "PPTX from Layouts",
+      "repo": "https://github.com/tristan-mcinnis/pptx-from-layouts-skill",
+      "clone_url": "https://github.com/tristan-mcinnis/pptx-from-layouts-skill.git",
+      "ref": "main",
+      "route": "native-pptx",
+      "kind": "template-engine",
+      "license": "MIT",
+      "best_for": "Generating editable decks from real PowerPoint slide-master layouts",
+      "features": [
+        "Profiles template masters and layouts",
+        "Maps semantic content to named layouts",
+        "Fills actual placeholders",
+        "Includes templates/inner-chapter.pptx"
+      ],
+      "entrypoint": "Follow the pptx-profile, pptx-author, and pptx-from-layouts pipeline"
+    },
+    {
+      "id": "pptx-template-skills",
+      "name": "PPTX Template Skills",
+      "repo": "https://github.com/CxyZyr/PPTX-Template-Skills",
+      "clone_url": "https://github.com/CxyZyr/PPTX-Template-Skills.git",
+      "ref": "main",
+      "route": "native-pptx",
+      "kind": "template-engine",
+      "license": "MIT",
+      "best_for": "Parsing a user-supplied PowerPoint template into a reusable semantic contract",
+      "features": [
+        "Template-to-spec parser",
+        "Content-plan scaffolding and validation",
+        "Geometry, theme, and paragraph-style preservation",
+        "Editable PPTX output"
+      ],
+      "entrypoint": "Parse template.pptx to spec.json, validate content_plan.json, then apply it"
+    },
+    {
+      "id": "competition-template-first",
+      "name": "Competition PPT Template-First Skill",
+      "repo": "https://github.com/che626/competition-ppt-template-first-skill",
+      "clone_url": "https://github.com/che626/competition-ppt-template-first-skill.git",
+      "ref": "main",
+      "route": "native-pptx",
+      "kind": "template-engine",
+      "license": "MIT",
+      "best_for": "Competition, defense, product, and technical decks requiring strong art direction and editable evidence layers",
+      "features": [
+        "Per-page template contracts",
+        "Whole-slide visual underlays",
+        "Editable factual layers",
+        "Evidence-aware quality gates"
+      ],
+      "entrypoint": "Read skills/competition-ppt-template-first/SKILL.md and its workflow references"
+    },
+    {
+      "id": "ppt-master-examples",
+      "name": "PPT Master Example Gallery",
+      "repo": "https://github.com/hugohe3/ppt-master",
+      "clone_url": "https://github.com/hugohe3/ppt-master.git",
+      "ref": "main",
+      "route": "native-pptx",
+      "kind": "example-gallery",
+      "license": "MIT",
+      "best_for": "Studying editable PPTX composition patterns and starting from a custom template workflow",
+      "features": [
+        "Twenty-plus rendered PPTX examples",
+        "Native shapes, charts, tables, notes, transitions, and animations",
+        "Custom template and slide-master support"
+      ],
+      "entrypoint": "Inspect examples and documentation; reuse design principles rather than copying example content"
+    }
+  ]
+}
+

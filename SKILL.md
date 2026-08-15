@@ -49,6 +49,8 @@ Read [references/visual-design.md](references/visual-design.md) before designing
 
 Define the canvas, safe margins, grid, spacing, typography, palette, image treatment, chart treatment, and citation style. Match the visual language to the audience and subject. Prefer real product imagery, meaningful diagrams, data, or deliberate typography over decorative filler. Keep layouts varied but related and make the primary message obvious at thumbnail size.
 
+When the user requests a template, brand style, or visual options, read [references/templates.md](references/templates.md). Use `python3 scripts/templates.py search "<terms>"` to shortlist sources. Fetch only the selected permissively licensed source, inspect it before execution, record its commit, and verify the adapted deck independently. Do not copy example content or assume that a repository license grants trademark rights.
+
 ## Generate
 
 Use the presentation toolchain available in the current environment. If a dedicated PPTX or presentation artifact skill is installed, read and follow it for file operations and its render requirements when its required tools are available. If those tools are not exposed or fail to initialize, record the limitation and fall back to a verified local route reported by `doctor.py`; for bundled Node modules, set `NODE_PATH` to the reported `node_path` value.
