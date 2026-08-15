@@ -53,5 +53,3 @@ Run strict mode so stale addresses or unexpected source text fail instead of sil
 ## Dependency behavior
 
 `doctor.py` finds Node/PptxGenJS, LibreOffice, Poppler, Chrome/Playwright, OCR, PDF text, and image tooling. OCR uses Tesseract when installed and macOS Vision otherwise. PDF text uses `pdftotext` when installed and macOS PDFKit otherwise.
-
-The tested GitHub Actions definition is stored at `assets/ci/github-actions-test.yml`. Copy it to `.github/workflows/test.yml` only when the pushing credential has GitHub's `workflow` permission.
