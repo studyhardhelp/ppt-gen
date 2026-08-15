@@ -22,11 +22,16 @@ BRIEF = {
     "brand_or_template": None,
     "required_sections": [],
     "constraints": [],
+    "theme": "executive",
+    "author": "",
+    "subject": "",
 }
 
 
 STORYBOARD = {
     "deck": {
+        "title": "",
+        "subtitle": "",
         "objective": "",
         "audience": "",
         "core_message": "",
@@ -39,6 +44,11 @@ STORYBOARD = {
             "action_title": "",
             "supporting_points": [],
             "visual": "",
+            "image": None,
+            "metrics": [],
+            "chart": None,
+            "table": None,
+            "columns": [],
             "source_ids": [],
             "speaker_note": "",
         }
@@ -83,9 +93,11 @@ def main() -> int:
         json.dumps(brief, indent=2, ensure_ascii=False) + "\n",
         args.force,
     )
+    storyboard = json.loads(json.dumps(STORYBOARD))
+    storyboard["deck"]["title"] = args.title
     write_new(
         root / "work" / "storyboard.json",
-        json.dumps(STORYBOARD, indent=2, ensure_ascii=False) + "\n",
+        json.dumps(storyboard, indent=2, ensure_ascii=False) + "\n",
         args.force,
     )
     write_new(root / "work" / "sources.md", SOURCES, args.force)

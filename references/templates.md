@@ -12,17 +12,21 @@ python3 scripts/templates.py list --route html
 python3 scripts/templates.py search "academic html"
 python3 scripts/templates.py show beautiful-html-templates
 python3 scripts/templates.py fetch beautiful-html-templates work/vendor/beautiful-html-templates
+python3 scripts/templates.py fetch beautiful-html-templates work/vendor/beautiful-html-templates --commit <sha>
+python3 scripts/templates.py verify beautiful-html-templates work/vendor/beautiful-html-templates
+python3 scripts/templates.py stats --include-local
+python3 scripts/templates.py local --gallery work/template-gallery.html
 ```
 
 As of 2026-08-15, the registry contains 20 permissively licensed GitHub sources: 237 concrete templates or themes, 52 reusable layouts, and 21 example decks. Template engines without a fixed bundled template are counted as sources but not as template assets. Run `stats` for the current machine-readable totals and route breakdown.
 
-`fetch` clones the selected source but never executes its scripts. Inspect the upstream README, `AGENTS.md`, dependencies, assets, and license before running commands or copying files.
+`fetch` clones the selected source but never executes its scripts. It writes `.ppt-gen-source.json` with the repository, commit, Git tree, registered license, discovered license files, and timestamp. Use `--commit` for exact reproducibility and `verify` before rebuilding. Inspect the upstream README, `AGENTS.md`, dependencies, assets, and license before running commands or copying files.
 
 ## Local template cache
 
 Inspect `local-templates/` before fetching a remote source. This directory is intentionally ignored by Git so locally licensed, user-supplied, or personal-use template assets cannot be pushed accidentally.
 
-The local Gorden PPT cache is stored at `local-templates/GordenPPTSkill`. Read its `templates/INDEX.md`, shortlist by scene and style, show the corresponding `preview.png` files when the choice is ambiguous, then follow its `SKILL.md` and `references/workflow.md`. Each of its 21 template directories contains `template.pptx`, `detail.json`, `intro.md`, and `preview.png`; use its `scripts/build_pptx.py` workflow to replace addressed text while preserving the original layout.
+When present, the local Gorden PPT cache is stored at `local-templates/GordenPPTSkill`; it is not part of a fresh Git clone. Read its `templates/INDEX.md`, shortlist by scene and style, show the corresponding `preview.png` files when the choice is ambiguous, then follow its `SKILL.md` and `references/workflow.md`. Each of its 21 template directories contains `template.pptx`, `detail.json`, `intro.md`, and `preview.png`; use its `scripts/build_pptx.py` workflow or this Skill's profile/fill workflow to replace addressed text while preserving the original layout.
 
 ## Selection workflow
 

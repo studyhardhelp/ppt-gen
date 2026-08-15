@@ -23,6 +23,16 @@ Use `work/storyboard.json`. Give each slide:
 - `source_ids`: evidence used on the slide;
 - `speaker_note`: what the presenter says beyond the visible content.
 
+The executable storyboard also accepts:
+
+- `image`: a project-relative or absolute image path;
+- `metrics`: up to four `{value, label}` callouts;
+- `chart`: `{type, categories, series, insight, show_values}`;
+- `table`: `{headers, rows}`;
+- `columns`: up to three `{title, points}` comparison columns.
+
+Use `role` values `cover`, `section`, `content`, `comparison`, `process`, `evidence`, `result`, `decision`, or `close`. Unknown roles use the standard content layout.
+
 Review the storyboard as a complete argument before implementing layouts. Remove redundant slides and split overloaded ones.
 
 ## Common narrative structures
@@ -44,4 +54,3 @@ Review the storyboard as a complete argument before implementing layouts. Remove
 - Put detail in notes, appendices, or handouts when it cannot be removed.
 - Explain the meaning of a chart directly instead of expecting the audience to infer it.
 - Write notes to expand the visible slide, not repeat it.
-

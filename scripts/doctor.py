@@ -19,6 +19,8 @@ TOOL_CANDIDATES = {
         "/Applications/LibreOfficeDev.app/Contents/MacOS/soffice",
     ],
     "pdftoppm": [],
+    "pdftotext": [],
+    "tesseract": [],
     "node": [],
 }
 
@@ -75,7 +77,10 @@ def build_report() -> dict:
     node, node_path, pptxgenjs = find_node_with_module("pptxgenjs")
     soffice = find_tool("soffice") or find_tool("libreoffice")
     pdftoppm = find_tool("pdftoppm")
+    pdftotext = find_tool("pdftotext")
+    tesseract = find_tool("tesseract")
     pillow = importlib.util.find_spec("PIL") is not None
+    scripts = Path(__file__).resolve().parent
 
     return {
         "python": sys.executable,
@@ -85,13 +90,21 @@ def build_report() -> dict:
             "pptxgenjs": pptxgenjs,
             "soffice": soffice,
             "pdftoppm": pdftoppm,
+            "pdftotext": pdftotext,
+            "tesseract": tesseract,
             "pillow": pillow,
         },
         "capabilities": {
             "inspect_pptx": True,
-            "native_pptx_generation": bool(node and pptxgenjs),
+            "native_pptx_generation": bool(node and pptxgenjs and (scripts / "build_pptx.cjs").is_file()),
             "render_pptx": bool(soffice and pdftoppm),
-            "html_deck": True,
+            "html_deck": (scripts / "build_html.py").is_file(),
+            "image_first_pptx": bool(node and pptxgenjs and (scripts / "images_to_pptx.cjs").is_file()),
+            "template_profile": (scripts / "template_profile.py").is_file(),
+            "template_fill": (scripts / "template_fill.py").is_file(),
+            "source_ingestion": (scripts / "ingest.py").is_file(),
+            "pdf_text_extraction": bool(pdftotext),
+            "ocr_reconstruction": bool(tesseract),
             "png_contact_sheet": bool(pillow),
         },
     }

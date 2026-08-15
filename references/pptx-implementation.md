@@ -11,6 +11,10 @@
 
 ## PptxGenJS guardrails
 
+The bundled fallback is `scripts/build_pptx.cjs`, normally invoked through `scripts/ppt_gen.py build`. It consumes `work/brief.json` and `work/storyboard.json`, supports semantic slide roles, charts, tables, metrics, comparisons, processes, images, citations, and speaker notes, and writes an editable 16:9 PPTX.
+
+Bundled themes are `executive`, `technical`, `academic`, `editorial`, `midnight`, and `education`. Use `brief.theme` or `--theme`.
+
 - Create one presentation instance per output file.
 - Use hex colors without `#`; express transparency with the library's transparency property.
 - Create fresh option objects for each add operation because some versions mutate options.
@@ -27,6 +31,8 @@
 - Preserve relationship IDs, content types, notes, comments, charts, media, and embedded files.
 - When editing XML, change the smallest possible set of parts and validate the resulting ZIP package.
 - Do not flatten editable charts or diagrams solely for implementation convenience.
+
+Run `scripts/template_profile.py` to enumerate masters, layouts, theme fonts/colors, slide relationships, shapes, placeholders, bounds, paragraphs, runs, and stable slot IDs. Run `scripts/template_fill.py` to replace addressed content while copying all unaffected package parts byte-for-byte. Prefer `slot_id` plus a saved profile; use shape/paragraph/run addresses when integrating an existing contract.
 
 ## Object hygiene
 

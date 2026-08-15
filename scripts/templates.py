@@ -5,7 +5,10 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from datetime import datetime, timezone
+import html
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -13,6 +16,7 @@ from pathlib import Path
 
 
 REGISTRY = Path(__file__).resolve().parents[1] / "assets" / "template-sources.json"
+DEFAULT_LOCAL_ROOT = Path(__file__).resolve().parents[1] / "local-templates"
 
 
 def load_registry() -> dict:
@@ -97,6 +101,8 @@ def print_stats(stats: dict) -> None:
     print(f"  Themes: {stats['themes']}")
     print(f"Layouts: {stats['layouts']}")
     print(f"Example decks: {stats['example_decks']}")
+    if "local_templates" in stats:
+        print(f"Local templates: {stats['local_templates']}")
     for field, label in (
         ("by_route", "Routes"),
         ("by_kind", "Kinds"),
@@ -106,7 +112,76 @@ def print_stats(stats: dict) -> None:
         print(f"{label}: {values}")
 
 
-def clone(item: dict, destination: Path, timeout: int) -> str:
+def discover_local(root: Path) -> list[dict]:
+    if not root.is_dir():
+        return []
+    items = []
+    for template in sorted([*root.rglob("*.pptx"), *root.rglob("*.potx")]):
+        directory = template.parent
+        detail = directory / "detail.json"
+        metadata = {}
+        if detail.is_file():
+            try:
+                metadata = json.loads(detail.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                metadata = {"metadata_error": "invalid detail.json"}
+        preview = directory / "preview.png"
+        items.append(
+            {
+                "name": metadata.get("name") or directory.name,
+                "template": str(template.resolve()),
+                "preview": str(preview.resolve()) if preview.is_file() else None,
+                "detail": str(detail.resolve()) if detail.is_file() else None,
+                "slide_count": metadata.get("slide_count"),
+                "style": metadata.get("style"),
+                "aspect": metadata.get("aspect"),
+            }
+        )
+    return items
+
+
+def write_local_gallery(items: list[dict], output: Path) -> None:
+    cards = []
+    for item in items:
+        preview = item.get("preview")
+        image = f'<img src="{html.escape(os.path.relpath(preview, output.parent))}" alt="{html.escape(item["name"])}">' if preview else '<div class="missing">No preview</div>'
+        cards.append(f'<article>{image}<h2>{html.escape(item["name"])}</h2><p>{html.escape(str(item.get("style") or "Unclassified"))} | {html.escape(str(item.get("slide_count") or "?"))} slides</p><code>{html.escape(item["template"])}</code></article>')
+    document = """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Local PPT templates</title><style>
+body{margin:0;background:#f3f4f5;color:#17202a;font:14px system-ui,sans-serif}header{padding:28px 4vw;background:#fff;border-bottom:1px solid #dfe3e6}h1{margin:0;font-size:26px}main{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;padding:24px 4vw}article{background:#fff;border:1px solid #dfe3e6;padding:12px}img,.missing{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#e8eaec}.missing{display:grid;place-items:center;color:#79858c}h2{font-size:17px;margin:12px 0 4px}p{color:#66737a}code{display:block;overflow-wrap:anywhere;font-size:11px;color:#7a858b}
+</style></head><body><header><h1>Local PPT templates</h1></header><main>""" + "".join(cards) + "</main></body></html>\n"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(document, encoding="utf-8")
+
+
+def git_run(command: list[str], timeout: int) -> str:
+    try:
+        result = subprocess.run(command, text=True, capture_output=True, check=False, timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"Git command timed out after {timeout} seconds") from exc
+    if result.returncode != 0:
+        raise RuntimeError((result.stderr or result.stdout).strip())
+    return result.stdout.strip()
+
+
+def source_manifest(item: dict, destination: Path, commit: str, timeout: int) -> dict:
+    git = shutil.which("git")
+    tree = git_run([git, "-C", str(destination), "rev-parse", "HEAD^{tree}"], timeout)
+    licenses = sorted(path.name for path in destination.iterdir() if path.is_file() and path.name.lower().startswith(("license", "copying")))
+    return {
+        "schema": "ppt-gen-template-source/v1",
+        "id": item["id"],
+        "repository": item["repo"],
+        "clone_url": item["clone_url"],
+        "registered_ref": item["ref"],
+        "commit": commit,
+        "tree": tree,
+        "registered_license": item["license"],
+        "license_files": licenses,
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def clone(item: dict, destination: Path, timeout: int, requested_commit: str | None = None) -> tuple[str, dict]:
     git = shutil.which("git")
     if not git:
         raise RuntimeError("git is required to fetch template sources")
@@ -125,22 +200,38 @@ def clone(item: dict, destination: Path, timeout: int) -> str:
         str(destination),
     ]
     try:
-        result = subprocess.run(
-            command, text=True, capture_output=True, check=False, timeout=timeout
-        )
-    except subprocess.TimeoutExpired as exc:
+        git_run(command, timeout)
+        if requested_commit:
+            git_run([git, "-C", str(destination), "fetch", "--depth", "1", "origin", requested_commit], timeout)
+            git_run([git, "-C", str(destination), "checkout", "--detach", requested_commit], timeout)
+    except RuntimeError:
         shutil.rmtree(destination, ignore_errors=True)
-        raise RuntimeError(f"Clone timed out after {timeout} seconds") from exc
-    if result.returncode != 0:
-        shutil.rmtree(destination, ignore_errors=True)
-        raise RuntimeError((result.stderr or result.stdout).strip())
-    commit = subprocess.run(
-        [git, "-C", str(destination), "rev-parse", "HEAD"],
-        text=True,
-        capture_output=True,
-        check=True,
-    ).stdout.strip()
-    return commit
+        raise
+    commit = git_run([git, "-C", str(destination), "rev-parse", "HEAD"], timeout)
+    manifest = source_manifest(item, destination, commit, timeout)
+    (destination / ".ppt-gen-source.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return commit, manifest
+
+
+def verify_source(item: dict, destination: Path, timeout: int) -> dict:
+    git = shutil.which("git")
+    manifest_path = destination / ".ppt-gen-source.json"
+    if not git or not manifest_path.is_file():
+        raise RuntimeError("Fetched source manifest is missing")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    commit = git_run([git, "-C", str(destination), "rev-parse", "HEAD"], timeout)
+    tree = git_run([git, "-C", str(destination), "rev-parse", "HEAD^{tree}"], timeout)
+    dirty = bool(git_run([git, "-C", str(destination), "status", "--porcelain", "--untracked-files=no"], timeout))
+    checks = {
+        "registry_id": manifest.get("id") == item["id"],
+        "repository": manifest.get("repository") == item["repo"],
+        "commit": manifest.get("commit") == commit,
+        "tree": manifest.get("tree") == tree,
+        "license": manifest.get("registered_license") == item["license"],
+        "license_files": bool(manifest.get("license_files")) and all((destination / name).is_file() for name in manifest.get("license_files", [])),
+        "clean": not dirty,
+    }
+    return {"destination": str(destination), "commit": commit, "checks": checks, "valid": all(checks.values())}
 
 
 def main() -> int:
@@ -149,6 +240,8 @@ def main() -> int:
 
     stats_parser = subparsers.add_parser("stats", help="Summarize registry counts")
     stats_parser.add_argument("--json", action="store_true")
+    stats_parser.add_argument("--include-local", action="store_true")
+    stats_parser.add_argument("--local-root", type=Path, default=DEFAULT_LOCAL_ROOT)
 
     list_parser = subparsers.add_parser("list", help="List template sources")
     list_parser.add_argument("--route")
@@ -166,6 +259,17 @@ def main() -> int:
     fetch_parser.add_argument("id")
     fetch_parser.add_argument("destination", type=Path)
     fetch_parser.add_argument("--timeout", type=int, default=120)
+    fetch_parser.add_argument("--commit", help="Fetch and detach at an exact commit")
+
+    verify_parser = subparsers.add_parser("verify", help="Verify a fetched source against its manifest")
+    verify_parser.add_argument("id")
+    verify_parser.add_argument("destination", type=Path)
+    verify_parser.add_argument("--timeout", type=int, default=30)
+
+    local_parser = subparsers.add_parser("local", help="List local PPTX/POTX templates")
+    local_parser.add_argument("--root", type=Path, default=DEFAULT_LOCAL_ROOT)
+    local_parser.add_argument("--json", action="store_true")
+    local_parser.add_argument("--gallery", type=Path, help="Write an HTML preview gallery")
 
     args = parser.parse_args()
     data = load_registry()
@@ -173,6 +277,8 @@ def main() -> int:
     try:
         if args.command == "stats":
             stats = registry_stats(data)
+            if args.include_local:
+                stats["local_templates"] = len(discover_local(args.local_root.resolve()))
             if args.json:
                 print(json.dumps(stats, indent=2, ensure_ascii=False))
             else:
@@ -193,11 +299,28 @@ def main() -> int:
             print(json.dumps(find_template(data, args.id), indent=2, ensure_ascii=False))
         elif args.command == "fetch":
             item = find_template(data, args.id)
-            commit = clone(item, args.destination.resolve(), max(1, args.timeout))
+            commit, manifest = clone(item, args.destination.resolve(), max(1, args.timeout), args.commit)
             print(f"Cloned {item['repo']}")
             print(f"Commit: {commit}")
+            print(f"Tree: {manifest['tree']}")
             print(f"Destination: {args.destination.resolve()}")
             print("Inspect the upstream README, AGENTS.md, code, assets, and license before use.")
+        elif args.command == "verify":
+            item = find_template(data, args.id)
+            report = verify_source(item, args.destination.resolve(), max(1, args.timeout))
+            print(json.dumps(report, indent=2, ensure_ascii=False))
+            return 0 if report["valid"] else 2
+        elif args.command == "local":
+            items = discover_local(args.root.resolve())
+            if args.gallery:
+                write_local_gallery(items, args.gallery.resolve())
+                print(f"Gallery: {args.gallery.resolve()}")
+            if args.json:
+                print(json.dumps(items, indent=2, ensure_ascii=False))
+            else:
+                print(f"Local templates: {len(items)}")
+                for item in items:
+                    print(f"- {item['name']} | {item.get('style') or 'unclassified'} | {item['template']}")
     except (KeyError, FileExistsError, RuntimeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

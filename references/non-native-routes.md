@@ -9,6 +9,8 @@
 - Test desktop and projected aspect ratios. Export a PDF fallback when requested.
 - If exporting to PPTX, verify the converted file independently and disclose lost motion or flattened effects.
 
+Build with `python3 scripts/ppt_gen.py build <project> --route html`. The self-contained runtime includes 36 selectable themes, keyboard navigation, progress, fullscreen (`F`), overview (`O`), print/PDF styling, and presenter mode (`S`) with notes and a timer.
+
 ## Image-first PPTX
 
 - Use only after the user accepts non-editable slide contents.
@@ -19,6 +21,8 @@
 - Assemble images without recompression where possible and add notes separately.
 - Offer editable reconstruction only as a separate, higher-cost step.
 
+Build a directory of ordered PNG/JPG slides with `python3 scripts/ppt_gen.py build <project> --route image-first --images <directory>`. The result is a PPTX with one full-slide image per page; disclose that objects inside the image are not editable.
+
 ## Editable reconstruction
 
 - Normalize every input page to a stable image and collect OCR results.
@@ -28,3 +32,4 @@
 - Compare each rebuilt slide against the source image at full size and as an overlay when possible.
 - Expect multiple correction passes and disclose areas that remain flattened.
 
+Run `python3 scripts/ppt_gen.py build <project> --route reconstruction --source <pdf-or-images>`. This route requires Tesseract and Pillow, preserves each source page as an image, covers recognized text regions with sampled local colors, and places editable OCR text over them. Treat the result as a first reconstruction pass and compare every page at full size.

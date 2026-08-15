@@ -1,0 +1,10 @@
+{
+  "name": "ppt-gen-skill-runtime",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pinned runtime dependency for the ppt-gen Codex skill",
+  "license": "MIT",
+  "dependencies": {
+    "pptxgenjs": "4.0.1"
+  }
+}

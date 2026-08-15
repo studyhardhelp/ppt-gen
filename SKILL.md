@@ -11,7 +11,7 @@ Build presentation artifacts through a source-first, storyboard-first, render-ve
 
 1. Inspect every supplied source, template, deck, image, and data file before drafting.
 2. Determine the audience, objective, expected decision or action, duration or slide count, language, brand constraints, and editability requirement. Ask at most three questions only when the answers materially change the deck.
-3. Run `python3 scripts/doctor.py` when the environment or toolchain is unknown. If the environment's dependency-loader tool is unavailable, treat `doctor.py` as the supported fallback and use the reported executable and `node_path` values.
+3. Run `python3 scripts/doctor.py` when the environment or toolchain is unknown. Treat unavailable capabilities as route constraints, not soft warnings.
 4. Select an output route and disclose any editability tradeoff before implementation.
 5. Create a clean workspace with `python3 scripts/init_deck.py <project-dir> --title "..." --route <route>` when the task does not already have an organized project directory.
 
@@ -43,6 +43,8 @@ Read [references/story-content.md](references/story-content.md) for evidence ext
 
 Never fabricate facts, citations, customer names, performance metrics, or quotations. When current facts are required, research them with reliable sources before building the deck.
 
+Use `python3 scripts/ingest.py <sources...> --output <project>/work/ingested.json` to normalize Markdown, text, JSON, CSV/TSV, HTML, DOCX, PPTX/POTX, PDF, or URL sources when direct inspection is inconvenient. Treat extraction as evidence collection, not automatic fact validation.
+
 ## Define the visual system
 
 Read [references/visual-design.md](references/visual-design.md) before designing a new deck or substantially restyling one.
@@ -53,7 +55,15 @@ When the user requests a template, brand style, or visual options, read [referen
 
 ## Generate
 
-Use the presentation toolchain available in the current environment. If a dedicated PPTX or presentation artifact skill is installed, read and follow it for file operations and its render requirements when its required tools are available. If those tools are not exposed or fail to initialize, record the limitation and fall back to a verified local route reported by `doctor.py`; for bundled Node modules, set `NODE_PATH` to the reported `node_path` value.
+Use the presentation toolchain available in the current environment. If a dedicated PPTX or presentation artifact skill is installed, read and follow it for file operations and render requirements. Otherwise use the executable fallback in this Skill. Read [references/automation.md](references/automation.md) for its CLI and schemas.
+
+Build an initialized project with:
+
+```bash
+python3 scripts/ppt_gen.py build <project-dir> --render
+```
+
+The command reads `work/brief.json` and `work/storyboard.json`, writes the selected output route, checks PPTX packages, and optionally renders every slide. Do not bypass storyboard completion merely because the builder accepts sparse fields.
 
 For native PPTX:
 
@@ -62,6 +72,13 @@ For native PPTX:
 - keep underlying chart values and units auditable;
 - add speaker notes when requested or useful for a timed live presentation;
 - keep frozen local copies of every final asset.
+
+For template PPTX, profile first, prepare addressed edits, and fill without flattening:
+
+```bash
+python3 scripts/ppt_gen.py profile-template template.pptx --output work/template-profile.json
+python3 scripts/template_fill.py template.pptx work/edits.json output/deck.pptx --profile work/template-profile.json --strict
+```
 
 For HTML, image-first, and reconstruction work, follow the selected route's confirmation, asset, editability, and verification rules in [references/non-native-routes.md](references/non-native-routes.md).
 
