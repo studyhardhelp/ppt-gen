@@ -75,13 +75,28 @@ def ocr_page(image_path: Path, tesseract: str, language: str) -> dict:
     return {"image": str(image_path), "width": image.width, "height": image.height, "lines": sorted(lines, key=lambda line: (line["y"], line["x"]))}
 
 
-def reconstruct(source: Path, output: Path, language: str) -> None:
+def ocr_page_vision(image_path: Path, swift: str, language: str) -> dict:
+    from PIL import Image
+
+    image = Image.open(image_path)
+    script = Path(__file__).resolve().parent / "macos_vision_ocr.swift"
+    result = run([swift, str(script), str(image_path), language], timeout=120)
+    raw_lines = json.loads(result.stdout)
+    lines = []
+    for item in raw_lines:
+        if item.get("text", "").strip() and float(item.get("confidence", 0)) >= 0.35:
+            box = (int(item["x"]), int(item["y"]), int(item["w"]), int(item["h"]))
+            lines.append({"text": item["text"].strip(), "x": box[0], "y": box[1], "w": box[2], "h": box[3], "fill": sample_fill(image, box)})
+    return {"image": str(image_path), "width": image.width, "height": image.height, "lines": sorted(lines, key=lambda line: (line["y"], line["x"]))}
+
+
+def reconstruct(source: Path, output: Path, language: str, aspect_ratio: str) -> None:
     report = build_report()
     tools = report["tools"]
     if not report["capabilities"]["native_pptx_generation"]:
         raise RuntimeError("PptxGenJS is required for reconstruction")
-    if not tools.get("tesseract"):
-        raise RuntimeError("Tesseract OCR is required for editable reconstruction; use image-first when OCR is unavailable")
+    if not report["capabilities"].get("ocr_reconstruction"):
+        raise RuntimeError("Tesseract or macOS Vision OCR is required for editable reconstruction")
     if not tools.get("pillow"):
         raise RuntimeError("Pillow is required for editable reconstruction")
     with tempfile.TemporaryDirectory(prefix="ppt-gen-reconstruct-") as directory:
@@ -89,14 +104,20 @@ def reconstruct(source: Path, output: Path, language: str) -> None:
         images = source_images(source, workspace)
         if not images:
             raise RuntimeError("No source pages were found")
-        manifest = {"schema": "ppt-reconstruction/v1", "pages": [ocr_page(image, tools["tesseract"], language) for image in images]}
+        if tools.get("tesseract"):
+            provider = "tesseract"
+            pages = [ocr_page(image, tools["tesseract"], language) for image in images]
+        else:
+            provider = "macos-vision"
+            pages = [ocr_page_vision(image, tools["swift"], language) for image in images]
+        manifest = {"schema": "ppt-reconstruction/v1", "provider": provider, "pages": pages}
         manifest_path = workspace / "manifest.json"
         manifest_path.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
         env = os.environ.copy()
         if tools.get("node_path"):
             env["NODE_PATH"] = tools["node_path"]
-        run([tools["node"], str(Path(__file__).resolve().parent / "reconstruct_pptx.cjs"), str(manifest_path), str(output)], env=env)
-    print(f"Created {output}\nPages: {len(images)}\nMode: image fidelity plus editable OCR text overlays")
+        run([tools["node"], str(Path(__file__).resolve().parent / "reconstruct_pptx.cjs"), str(manifest_path), str(output), "--aspect-ratio", aspect_ratio], env=env)
+    print(f"Created {output}\nPages: {len(images)}\nOCR: {provider}\nMode: image fidelity plus editable OCR text overlays")
 
 
 def main() -> int:
@@ -104,9 +125,10 @@ def main() -> int:
     parser.add_argument("source", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--language", default="eng", help="Tesseract language code, for example eng or chi_sim+eng")
+    parser.add_argument("--aspect-ratio", default="16:9")
     args = parser.parse_args()
     try:
-        reconstruct(args.source.resolve(), args.output.resolve(), args.language)
+        reconstruct(args.source.resolve(), args.output.resolve(), args.language, args.aspect_ratio)
     except (OSError, RuntimeError, ValueError) as exc:
         parser.error(str(exc))
     return 0

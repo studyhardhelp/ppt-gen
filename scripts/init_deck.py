@@ -49,6 +49,9 @@ STORYBOARD = {
             "chart": None,
             "table": None,
             "columns": [],
+            "diagram": None,
+            "quote": None,
+            "attribution": None,
             "source_ids": [],
             "speaker_note": "",
         }
@@ -75,6 +78,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("project", type=Path, help="Project directory to create")
     parser.add_argument("--title", default="", help="Initial deck title")
+    parser.add_argument("--aspect-ratio", default="16:9", help="16:9, 4:3, 16:10, 9:16, or A4-portrait")
     parser.add_argument(
         "--route", choices=ROUTES, default="native-pptx", help="Output route"
     )
@@ -88,6 +92,7 @@ def main() -> int:
     brief = dict(BRIEF)
     brief["title"] = args.title
     brief["output_route"] = args.route
+    brief["aspect_ratio"] = args.aspect_ratio
     write_new(
         root / "work" / "brief.json",
         json.dumps(brief, indent=2, ensure_ascii=False) + "\n",

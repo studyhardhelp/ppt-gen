@@ -67,6 +67,16 @@ def apply_address(root: ET.Element, edit: dict, strict: bool) -> str:
     targets[0].text = str(edit.get("new_text", ""))
     for node in targets[1:]:
         node.text = ""
+    if edit.get("font_size_pt") is not None:
+        font_size = max(1, int(round(float(edit["font_size_pt"]) * 100)))
+        for paragraph_run in paragraphs[p_index].findall(".//a:r", NS):
+            if any(node is targets[0] for node in paragraph_run.findall(".//a:t", NS)):
+                properties = paragraph_run.find("a:rPr", NS)
+                if properties is None:
+                    properties = ET.Element(f"{{{NS['a']}}}rPr")
+                    paragraph_run.insert(0, properties)
+                properties.attrib["sz"] = str(font_size)
+                break
     return current
 
 

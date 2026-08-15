@@ -7,6 +7,7 @@ import argparse
 import csv
 import html.parser
 import json
+import platform
 import re
 import shutil
 import subprocess
@@ -97,9 +98,13 @@ def extract_xlsx(path: Path) -> tuple[str, list[list[list[str]]]]:
 
 def extract_pdf(path: Path) -> str:
     tool = shutil.which("pdftotext")
-    if not tool:
-        raise RuntimeError("pdftotext is required for PDF ingestion")
-    result = subprocess.run([tool, "-layout", str(path), "-"], capture_output=True, text=True, check=False)
+    if tool:
+        command = [tool, "-layout", str(path), "-"]
+    elif platform.system() == "Darwin" and shutil.which("swift"):
+        command = [shutil.which("swift"), str(Path(__file__).resolve().parent / "macos_pdf_text.swift"), str(path)]
+    else:
+        raise RuntimeError("pdftotext or macOS PDFKit is required for PDF ingestion")
+    result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=120)
     if result.returncode:
         raise RuntimeError((result.stderr or result.stdout).strip())
     return result.stdout.strip()

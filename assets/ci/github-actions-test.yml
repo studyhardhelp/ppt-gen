@@ -22,6 +22,7 @@ jobs:
       - run: node --check scripts/build_pptx.cjs
       - run: node --check scripts/images_to_pptx.cjs
       - run: node --check scripts/reconstruct_pptx.cjs
+      - run: node --check scripts/html_export.cjs
       - run: |
           python scripts/init_deck.py /tmp/ppt-gen-ci --title "CI deck"
           node scripts/build_pptx.cjs /tmp/ppt-gen-ci /tmp/ppt-gen-ci/output/deck.pptx

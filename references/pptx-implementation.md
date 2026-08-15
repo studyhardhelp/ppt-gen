@@ -11,7 +11,7 @@
 
 ## PptxGenJS guardrails
 
-The bundled fallback is `scripts/build_pptx.cjs`, normally invoked through `scripts/ppt_gen.py build`. It consumes `work/brief.json` and `work/storyboard.json`, supports semantic slide roles, charts, tables, metrics, comparisons, processes, images, citations, and speaker notes, and writes an editable 16:9 PPTX.
+The bundled fallback is `scripts/build_pptx.cjs`, normally invoked through `scripts/ppt_gen.py build`. It consumes `work/brief.json` and `work/storyboard.json`, supports semantic slide roles, charts, tables, metrics, comparisons, processes, editable diagrams, images, quotations, citations, and speaker notes. It supports 16:9, 4:3, 16:10, 9:16, A4, and custom numeric ratios.
 
 Bundled themes are `executive`, `technical`, `academic`, `editorial`, `midnight`, and `education`. Use `brief.theme` or `--theme`.
 
@@ -32,7 +32,7 @@ Bundled themes are `executive`, `technical`, `academic`, `editorial`, `midnight`
 - When editing XML, change the smallest possible set of parts and validate the resulting ZIP package.
 - Do not flatten editable charts or diagrams solely for implementation convenience.
 
-Run `scripts/template_profile.py` to enumerate masters, layouts, theme fonts/colors, slide relationships, shapes, placeholders, bounds, paragraphs, runs, and stable slot IDs. Run `scripts/template_fill.py` to replace addressed content while copying all unaffected package parts byte-for-byte. Prefer `slot_id` plus a saved profile; use shape/paragraph/run addresses when integrating an existing contract.
+Run `scripts/template_profile.py` to enumerate masters, layouts, theme fonts/colors, slide relationships, pictures, charts, tables, placeholders, bounds, paragraphs, runs, and stable slot IDs. Use `scripts/template_plan.py` for an auditable semantic first mapping, then `scripts/pptx_edit.py` for text, image, notes, chart, slide-order, and duplication changes. Prefer `slot_id` plus a saved profile; use shape/paragraph/run addresses when integrating an existing contract.
 
 ## Object hygiene
 

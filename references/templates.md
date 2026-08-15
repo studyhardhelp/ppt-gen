@@ -16,9 +16,10 @@ python3 scripts/templates.py fetch beautiful-html-templates work/vendor/beautifu
 python3 scripts/templates.py verify beautiful-html-templates work/vendor/beautiful-html-templates
 python3 scripts/templates.py stats --include-local
 python3 scripts/templates.py local --gallery work/template-gallery.html
+python3 scripts/templates.py discover "academic presentation template" --limit 20 --output work/github-candidates.json
 ```
 
-As of 2026-08-15, the registry contains 20 permissively licensed GitHub sources: 237 concrete templates or themes, 52 reusable layouts, and 21 example decks. Template engines without a fixed bundled template are counted as sources but not as template assets. Run `stats` for the current machine-readable totals and route breakdown.
+As of 2026-08-15, the registry contains 21 permissively licensed GitHub sources: 273 concrete templates or themes, 83 reusable layouts, and 36 example decks. Template engines without a fixed bundled template are counted as sources but not as template assets. Run `stats` for the current machine-readable totals and route breakdown.
 
 `fetch` clones the selected source but never executes its scripts. It writes `.ppt-gen-source.json` with the repository, commit, Git tree, registered license, discovered license files, and timestamp. Use `--commit` for exact reproducibility and `verify` before rebuilding. Inspect the upstream README, `AGENTS.md`, dependencies, assets, and license before running commands or copying files.
 
@@ -63,6 +64,7 @@ When present, the local Gorden PPT cache is stored at `local-templates/GordenPPT
 | `bit-ppt-template` | Native PPTX | Branded template | MIT | Authorized BIT academic presentations |
 | `ppt-report-skills` | HTML | Template engine | MIT | 19 reusable report slide layouts |
 | `seaslides` | HTML | Template library | MIT | 18 web presentation templates with theme metadata |
+| `html-ppt-skill` | HTML | Template engine | MIT | 36 themes, 31 layouts, 15 full decks, 47 animations, and presenter mode |
 
 The machine-readable source of truth is [assets/template-sources.json](../assets/template-sources.json).
 
@@ -77,6 +79,8 @@ The machine-readable source of truth is [assets/template-sources.json](../assets
 ## Native PPTX guidance
 
 Prefer template engines over treating a PPTX as a flat background. Profile masters and layouts, map semantic content to real placeholders, and preserve theme colors, fonts, geometry, charts, notes, and relationships. Render the result after every substantial change.
+
+`template-plan` ranks candidate layouts by storyboard role, puts the action title in the most prominent text slot, scales long text to the available geometry, clears unused sample copy, and emits stable addressed edits for strict application. Always inspect the rendered result because template geometry and font substitution can still affect line wrapping.
 
 ## HTML, Marp, and Slidev guidance
 

@@ -9,6 +9,9 @@ from datetime import datetime, timezone
 import html
 import json
 import os
+import urllib.error
+import urllib.parse
+import urllib.request
 import shutil
 import subprocess
 import sys
@@ -51,8 +54,41 @@ def select(data: dict, route: str | None, kind: str | None, query: str | None) -
         items = [item for item in items if item["kind"] == kind]
     if query:
         terms = query.lower().split()
-        items = [item for item in items if all(term in searchable(item) for term in terms)]
+        scored = []
+        for item in items:
+            haystack = searchable(item)
+            score = sum(haystack.count(term) * 2 + int(term in item["id"].lower()) * 3 + int(term in item["best_for"].lower()) for term in terms)
+            if score:
+                scored.append((score, item))
+        items = [item for _, item in sorted(scored, key=lambda pair: (-pair[0], pair[1]["id"]))]
     return items
+
+
+def github_request(url: str) -> dict:
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "ppt-gen-skill"}
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    request = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def discover_github(query: str, limit: int, licenses: set[str]) -> list[dict]:
+    encoded = urllib.parse.quote(f"{query} in:name,description,readme")
+    data = github_request(f"https://api.github.com/search/repositories?q={encoded}&sort=stars&order=desc&per_page={min(100, max(1, limit * 2))}")
+    results = []
+    for repository in data.get("items", []):
+        relevance_text = " ".join([repository.get("name") or "", repository.get("description") or "", *(repository.get("topics") or [])]).lower()
+        relevance = sum(relevance_text.count(term) for term in ("ppt", "pptx", "powerpoint", "presentation", "slide", "marp", "slidev"))
+        if relevance < 4 or repository.get("name", "").lower().startswith("awesome-"):
+            continue
+        license_data = repository.get("license") or {}
+        spdx = license_data.get("spdx_id")
+        if not spdx or spdx == "NOASSERTION" or (licenses and spdx.lower() not in licenses):
+            continue
+        results.append({"repo": repository["full_name"], "url": repository["html_url"], "clone_url": repository["clone_url"], "description": repository.get("description") or "", "default_branch": repository.get("default_branch") or "main", "license": spdx, "stars": repository.get("stargazers_count", 0), "relevance": relevance, "topics": repository.get("topics") or []})
+    return sorted(results, key=lambda item: (-item["relevance"], -item["stars"], item["repo"]))[:limit]
 
 
 def print_table(items: list[dict]) -> None:
@@ -271,6 +307,12 @@ def main() -> int:
     local_parser.add_argument("--json", action="store_true")
     local_parser.add_argument("--gallery", type=Path, help="Write an HTML preview gallery")
 
+    discover_parser = subparsers.add_parser("discover", help="Discover explicitly licensed GitHub template repositories")
+    discover_parser.add_argument("query", nargs="?", default="presentation template ppt pptx slides")
+    discover_parser.add_argument("--limit", type=int, default=20)
+    discover_parser.add_argument("--license", action="append", default=["mit", "apache-2.0", "cc0-1.0"], dest="licenses")
+    discover_parser.add_argument("--output", type=Path)
+
     args = parser.parse_args()
     data = load_registry()
 
@@ -321,7 +363,15 @@ def main() -> int:
                 print(f"Local templates: {len(items)}")
                 for item in items:
                     print(f"- {item['name']} | {item.get('style') or 'unclassified'} | {item['template']}")
-    except (KeyError, FileExistsError, RuntimeError) as exc:
+        elif args.command == "discover":
+            items = discover_github(args.query, max(1, args.limit), {item.lower() for item in args.licenses})
+            content = json.dumps(items, indent=2, ensure_ascii=False) + "\n"
+            if args.output:
+                args.output.resolve().write_text(content, encoding="utf-8")
+                print(f"Created {args.output.resolve()}")
+            print(content, end="")
+            print(f"Discovered: {len(items)}", file=sys.stderr)
+    except (KeyError, FileExistsError, RuntimeError, urllib.error.URLError, json.JSONDecodeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     return 0

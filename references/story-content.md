@@ -30,6 +30,9 @@ The executable storyboard also accepts:
 - `chart`: `{type, categories, series, insight, show_values}`;
 - `table`: `{headers, rows}`;
 - `columns`: up to three `{title, points}` comparison columns.
+- `diagram`: editable nodes and edges for simple flows;
+- `quote` and `attribution`: quotation slides;
+- `transition`: HTML transition name.
 
 Use `role` values `cover`, `section`, `content`, `comparison`, `process`, `evidence`, `result`, `decision`, or `close`. Unknown roles use the standard content layout.
 

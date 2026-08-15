@@ -7,6 +7,7 @@ import argparse
 import importlib.util
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -21,6 +22,12 @@ TOOL_CANDIDATES = {
     "pdftoppm": [],
     "pdftotext": [],
     "tesseract": [],
+    "swift": [],
+    "chrome": [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    ],
     "node": [],
 }
 
@@ -75,12 +82,17 @@ def find_node_with_module(module: str) -> tuple[str | None, str | None, str | No
 
 def build_report() -> dict:
     node, node_path, pptxgenjs = find_node_with_module("pptxgenjs")
+    playwright_node, playwright_node_path, playwright = find_node_with_module("playwright")
     soffice = find_tool("soffice") or find_tool("libreoffice")
     pdftoppm = find_tool("pdftoppm")
     pdftotext = find_tool("pdftotext")
     tesseract = find_tool("tesseract")
+    swift = find_tool("swift")
+    chrome = find_tool("chrome") or find_tool("chromium") or find_tool("google-chrome")
     pillow = importlib.util.find_spec("PIL") is not None
     scripts = Path(__file__).resolve().parent
+    macos_vision = bool(platform.system() == "Darwin" and swift and (scripts / "macos_vision_ocr.swift").is_file())
+    macos_pdfkit = bool(platform.system() == "Darwin" and swift and (scripts / "macos_pdf_text.swift").is_file())
 
     return {
         "python": sys.executable,
@@ -88,10 +100,15 @@ def build_report() -> dict:
             "node": node,
             "node_path": node_path,
             "pptxgenjs": pptxgenjs,
+            "playwright_node": playwright_node,
+            "playwright_node_path": playwright_node_path,
+            "playwright": playwright,
             "soffice": soffice,
             "pdftoppm": pdftoppm,
             "pdftotext": pdftotext,
             "tesseract": tesseract,
+            "swift": swift,
+            "chrome": chrome,
             "pillow": pillow,
         },
         "capabilities": {
@@ -99,12 +116,17 @@ def build_report() -> dict:
             "native_pptx_generation": bool(node and pptxgenjs and (scripts / "build_pptx.cjs").is_file()),
             "render_pptx": bool(soffice and pdftoppm),
             "html_deck": (scripts / "build_html.py").is_file(),
+            "html_export": bool(playwright_node and playwright and chrome and (scripts / "html_export.cjs").is_file()),
             "image_first_pptx": bool(node and pptxgenjs and (scripts / "images_to_pptx.cjs").is_file()),
             "template_profile": (scripts / "template_profile.py").is_file(),
             "template_fill": (scripts / "template_fill.py").is_file(),
             "source_ingestion": (scripts / "ingest.py").is_file(),
-            "pdf_text_extraction": bool(pdftotext),
-            "ocr_reconstruction": bool(tesseract),
+            "pdf_text_extraction": bool(pdftotext or macos_pdfkit),
+            "pdf_text_pdftotext": bool(pdftotext),
+            "pdf_text_macos_pdfkit": macos_pdfkit,
+            "ocr_reconstruction": bool(tesseract or macos_vision),
+            "ocr_tesseract": bool(tesseract),
+            "ocr_macos_vision": macos_vision,
             "png_contact_sheet": bool(pillow),
         },
     }

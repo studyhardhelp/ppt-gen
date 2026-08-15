@@ -8,6 +8,7 @@ import base64
 import html
 import json
 import mimetypes
+import re
 from pathlib import Path
 
 
@@ -49,6 +50,17 @@ THEMES = {
     "ocean": ("#f3f8fa", "#173342", "#197b99", "#e67e50", "#637b87"),
     "culture": ("#fcf7f2", "#2e2521", "#b64b3c", "#34736d", "#766b65"),
 }
+
+
+def canvas_for(value: str) -> tuple[int, int]:
+    known = {"16:9": (1280, 720), "4:3": (960, 720), "16:10": (1152, 720), "9:16": (405, 720), "a4-portrait": (509, 720), "a4-landscape": (1018, 720)}
+    name = (value or "16:9").lower()
+    if name in known:
+        return known[name]
+    match = re.fullmatch(r"([0-9.]+)\s*[:x]\s*([0-9.]+)", name)
+    if not match:
+        raise ValueError(f"Unsupported aspect ratio: {value}")
+    return round(720 * float(match.group(1)) / float(match.group(2))), 720
 
 
 def esc(value: object) -> str:
@@ -139,7 +151,8 @@ def render_slide(slide: dict, index: int, deck: dict, project: Path) -> str:
     else:
         content = f'<h1>{esc(title)}</h1><div class="body">{render_body(slide, project)}</div>'
     footer = f'<footer><span>{esc(sources)}</span><span>{index:02d}</span></footer>'
-    return f'<article class="slide role-{esc(role)}" data-index="{index - 1}">{content}{footer}<aside class="notes">{note}</aside></article>'
+    transition = slide.get("transition") or "fade"
+    return f'<article class="slide role-{esc(role)}" data-index="{index - 1}" data-transition="{esc(transition)}">{content}{footer}<aside class="notes">{note}</aside></article>'
 
 
 def build(project: Path, output: Path, theme_name: str | None) -> None:
@@ -154,6 +167,7 @@ def build(project: Path, output: Path, theme_name: str | None) -> None:
     bg, ink, accent, accent2, muted = THEMES[theme_name]
     deck = storyboard.get("deck") or {}
     title = brief.get("title") or deck.get("title") or "Presentation"
+    stage_w, stage_h = canvas_for(brief.get("aspect_ratio", "16:9"))
     slide_html = "".join(render_slide(slide, index, deck, project) for index, slide in enumerate(slides, 1))
     theme_options = "".join(f'<option value="{esc(name)}">{esc(name)}</option>' for name in THEMES)
     theme_data = json.dumps(THEMES, ensure_ascii=True).replace("</", "<\\/")
@@ -161,10 +175,10 @@ def build(project: Path, output: Path, theme_name: str | None) -> None:
 <html lang="{esc(brief.get('language') or 'en')}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>{esc(title)}</title><style>
-:root{{--bg:{bg};--ink:{ink};--accent:{accent};--accent2:{accent2};--muted:{muted};--stage-w:1280px;--stage-h:720px}}
+:root{{--bg:{bg};--ink:{ink};--accent:{accent};--accent2:{accent2};--muted:{muted};--stage-w:{stage_w}px;--stage-h:{stage_h}px}}
 *{{box-sizing:border-box}}html,body{{margin:0;width:100%;height:100%;overflow:hidden;background:#080b0d;color:var(--ink);font-family:Inter,"Noto Sans SC",system-ui,sans-serif;letter-spacing:0}}
 #deck{{position:absolute;left:50%;top:50%;width:var(--stage-w);height:var(--stage-h);transform:translate(-50%,-50%) scale(var(--scale,1));transform-origin:center}}
-.slide{{display:none;position:absolute;inset:0;padding:54px 68px;background:var(--bg);overflow:hidden}}.slide.active{{display:block}}
+.slide{{display:none;position:absolute;inset:0;padding:54px 68px;background:var(--bg);overflow:hidden}}.slide.active{{display:block;animation:fade .28s ease-out}}.slide.active[data-transition="slide"]{{animation:slideIn .32s ease-out}}.slide.active[data-transition="zoom"]{{animation:zoomIn .3s ease-out}}@keyframes fade{{from{{opacity:.25}}to{{opacity:1}}}}@keyframes slideIn{{from{{transform:translateX(4%);opacity:.2}}to{{transform:none;opacity:1}}}}@keyframes zoomIn{{from{{transform:scale(.97);opacity:.2}}to{{transform:none;opacity:1}}}}
 .slide h1{{margin:0;max-width:1120px;font-size:42px;line-height:1.14;letter-spacing:0}}.body{{margin-top:58px;height:500px;display:flex;align-items:center}}
 .body>ul{{width:52%;margin:0;padding-left:32px;font-size:25px;line-height:1.42}}li{{margin:0 0 20px}}
 .slide:not(.role-cover):not(.role-section):not(.role-section_divider)::before{{content:"";position:absolute;left:68px;top:31px;width:42px;height:4px;background:var(--accent)}}
@@ -178,16 +192,17 @@ table{{border-collapse:collapse;width:100%;font-size:17px}}th,td{{padding:13px 1
 .notes{{display:none}}#progress{{position:fixed;left:0;bottom:0;height:4px;background:var(--accent);transition:width .2s}}
 #presenter{{display:none;position:fixed;inset:0;background:#111;color:#eee;padding:30px;z-index:5;grid-template-columns:2fr 1fr;gap:25px}}#presenter.open{{display:grid}}#presenter .preview{{background:#222;display:grid;place-items:center;font-size:38px}}#presenter .panel{{font-size:20px;line-height:1.5}}#timer{{font:700 44px ui-monospace,monospace;color:var(--accent)}}
 #toolbar{{position:fixed;right:12px;top:12px;z-index:4;opacity:.12;transition:opacity .2s}}#toolbar:hover{{opacity:1}}select,button{{background:#161b1e;color:#fff;border:1px solid #53616a;padding:7px 9px}}
-body.overview{{overflow:auto;background:#222}}body.overview #deck{{position:static;width:auto;height:auto;transform:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;padding:25px}}body.overview .slide{{display:block;position:relative;width:100%;aspect-ratio:16/9;transform:scale(.25);transform-origin:top left;margin-bottom:-75%;pointer-events:auto}}
-@media print{{body{{overflow:visible;background:white}}#deck{{position:static;transform:none;width:1280px;height:auto}}.slide{{display:block;position:relative;width:1280px;height:720px;page-break-after:always}}#toolbar,#progress,#presenter{{display:none!important}}}}
+body.overview{{overflow:auto;background:#222}}body.overview #deck{{position:static;width:auto;height:auto;transform:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;padding:25px}}body.overview .slide{{display:block;position:relative;width:100%;aspect-ratio:{stage_w}/{stage_h};transform:scale(.25);transform-origin:top left;margin-bottom:-75%;pointer-events:auto}}
+@media print{{body{{overflow:visible;background:white}}#deck{{position:static;transform:none;width:{stage_w}px;height:auto}}.slide{{display:block;position:relative;width:{stage_w}px;height:{stage_h}px;page-break-after:always}}.slide:last-child{{page-break-after:auto}}#toolbar,#progress,#presenter{{display:none!important}}}}
 </style></head><body><main id="deck">{slide_html}</main><div id="progress"></div>
 <div id="toolbar"><select id="theme">{theme_options}</select><button id="fullscreen" title="Fullscreen">F</button></div>
-<section id="presenter"><div class="preview" id="presenter-title"></div><div class="panel"><div id="timer">00:00</div><h2>Speaker notes</h2><div id="presenter-notes"></div></div></section>
-<script>const themes={theme_data};let current=0,start=Date.now();const slides=[...document.querySelectorAll('.slide')],progress=document.querySelector('#progress');
+<section id="presenter"><div class="preview" id="presenter-title"></div><div class="panel"><div id="timer">00:00</div><h2>Speaker notes</h2><div id="presenter-notes"></div><h2>Next</h2><div id="presenter-next"></div></div></section>
+<script>const themes={theme_data};let current=0,start=Date.now(),presenterWindow=null,editing=false;const slides=[...document.querySelectorAll('.slide')],progress=document.querySelector('#progress');
 function show(n){{current=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,i)=>s.classList.toggle('active',i===current));progress.style.width=((current+1)/slides.length*100)+'%';updatePresenter()}}
-function fit(){{document.documentElement.style.setProperty('--scale',Math.min(innerWidth/1280,innerHeight/720))}}function updatePresenter(){{document.querySelector('#presenter-title').textContent=slides[current].querySelector('h1')?.textContent||'';document.querySelector('#presenter-notes').textContent=slides[current].querySelector('.notes')?.textContent||'No speaker notes.'}}
+function presenterData(){{return{{title:slides[current].querySelector('h1')?.textContent||'',notes:slides[current].querySelector('.notes')?.textContent||'No speaker notes.',next:slides[current+1]?.querySelector('h1')?.textContent||'End',count:(current+1)+' / '+slides.length}}}}function fit(){{document.documentElement.style.setProperty('--scale',Math.min(innerWidth/{stage_w},innerHeight/{stage_h}))}}function updatePresenter(){{const d=presenterData();document.querySelector('#presenter-title').textContent=d.title;document.querySelector('#presenter-notes').textContent=d.notes;document.querySelector('#presenter-next').textContent=d.next;if(presenterWindow&&!presenterWindow.closed){{for(const k of ['title','notes','next','count'])presenterWindow.document.querySelector('#'+k).textContent=d[k]}}}}
+function openPresenter(){{presenterWindow=window.open('','pptPresenter','width=920,height=680');if(!presenterWindow){{document.querySelector('#presenter').classList.toggle('open');return}}presenterWindow.document.write('<!doctype html><title>Presenter</title><style>body{{background:#111;color:#eee;font:20px system-ui;padding:28px}}#timer{{font:700 46px monospace;color:#21b6a8}}#notes{{white-space:pre-wrap;line-height:1.5}}</style><div id="timer">00:00</div><h2 id="count"></h2><h1 id="title"></h1><h2>Notes</h2><div id="notes"></div><h2>Next</h2><div id="next"></div><script>let s=Date.now();setInterval(()=>{{let n=Math.floor((Date.now()-s)/1000);document.querySelector("#timer").textContent=String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0")}},1000)<\\/script>');presenterWindow.document.close();updatePresenter()}}function toggleEdit(){{editing=!editing;document.querySelectorAll('.slide h1,.slide h2,.slide li,.slide td,.slide th,.slide strong,.slide span').forEach(el=>el.contentEditable=editing)}}function saveEdited(){{const blob=new Blob(['<!doctype html>\\n'+document.documentElement.outerHTML],{{type:'text/html'}}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=document.title.replace(/[^a-z0-9_-]+/gi,'-')+'-edited.html';a.click();URL.revokeObjectURL(a.href)}}
 function setTheme(name){{const t=themes[name];if(!t)return;['--bg','--ink','--accent','--accent2','--muted'].forEach((v,i)=>document.documentElement.style.setProperty(v,t[i]));localStorage.setItem('ppt-theme',name)}}
-addEventListener('resize',fit);addEventListener('keydown',e=>{{if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key))show(current+1);if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key))show(current-1);if(e.key==='Home')show(0);if(e.key==='End')show(slides.length-1);if(e.key.toLowerCase()==='f')document.documentElement.requestFullscreen?.();if(e.key.toLowerCase()==='s')document.querySelector('#presenter').classList.toggle('open');if(e.key.toLowerCase()==='o')document.body.classList.toggle('overview')}});
+addEventListener('resize',fit);addEventListener('keydown',e=>{{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){{e.preventDefault();saveEdited();return}}if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)&&!editing)show(current+1);if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)&&!editing)show(current-1);if(e.key==='Home')show(0);if(e.key==='End')show(slides.length-1);if(e.key.toLowerCase()==='f')document.documentElement.requestFullscreen?.();if(e.key.toLowerCase()==='s')openPresenter();if(e.key.toLowerCase()==='o')document.body.classList.toggle('overview');if(e.key.toLowerCase()==='e')toggleEdit()}});
 setInterval(()=>{{const s=Math.floor((Date.now()-start)/1000);document.querySelector('#timer').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}},1000);document.querySelector('#fullscreen').onclick=()=>document.documentElement.requestFullscreen?.();const picker=document.querySelector('#theme');picker.value=localStorage.getItem('ppt-theme')||'{theme_name}';picker.onchange=e=>setTheme(e.target.value);setTheme(picker.value);fit();show(0);</script></body></html>'''
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(document, encoding="utf-8")

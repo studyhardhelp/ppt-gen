@@ -4,15 +4,48 @@
 const fs = require("fs");
 const path = require("path");
 const PptxGenJS = require("pptxgenjs");
+const sizeOf = require("image-size");
 
 const THEMES = {
-  executive: { bg: "F7F7F4", ink: "18202A", muted: "65717C", accent: "D9483B", accent2: "2E6F73", surface: "FFFFFF", font: "Aptos" },
-  technical: { bg: "F4F7F8", ink: "13232C", muted: "5A6A72", accent: "00A39B", accent2: "F0A202", surface: "FFFFFF", font: "Aptos" },
-  academic: { bg: "FBFAF7", ink: "20252B", muted: "6B6F73", accent: "8B1E3F", accent2: "35605A", surface: "FFFFFF", font: "Aptos" },
+  executive: { bg: "F7F7F4", ink: "18202A", muted: "65717C", accent: "D9483B", accent2: "2E6F73", surface: "FFFFFF", font: "Arial" },
+  technical: { bg: "F4F7F8", ink: "13232C", muted: "5A6A72", accent: "00A39B", accent2: "F0A202", surface: "FFFFFF", font: "Arial" },
+  academic: { bg: "FBFAF7", ink: "20252B", muted: "6B6F73", accent: "8B1E3F", accent2: "35605A", surface: "FFFFFF", font: "Arial" },
   editorial: { bg: "FCFBF8", ink: "151515", muted: "66625C", accent: "E4572E", accent2: "2F6690", surface: "FFFFFF", font: "Georgia" },
-  midnight: { bg: "12181D", ink: "F4F5F6", muted: "A9B4BC", accent: "FFB703", accent2: "2EC4B6", surface: "1E2930", font: "Aptos" },
-  education: { bg: "FFFDF7", ink: "24313A", muted: "66747C", accent: "E85D75", accent2: "2A9D8F", surface: "FFFFFF", font: "Aptos" },
+  midnight: { bg: "12181D", ink: "F4F5F6", muted: "A9B4BC", accent: "FFB703", accent2: "2EC4B6", surface: "1E2930", font: "Arial" },
+  education: { bg: "FFFDF7", ink: "24313A", muted: "66747C", accent: "E85D75", accent2: "2A9D8F", surface: "FFFFFF", font: "Arial" },
 };
+
+function canvasFor(value) {
+  const name = String(value || "16:9").toLowerCase();
+  const known = { "16:9": [13.333, 7.5], "4:3": [10, 7.5], "16:10": [12, 7.5], "9:16": [4.219, 7.5], "a4-portrait": [8.267, 11.693], "a4-landscape": [11.693, 8.267] };
+  if (known[name]) return { name, width: known[name][0], height: known[name][1] };
+  const match = name.match(/^([0-9.]+)\s*[:x]\s*([0-9.]+)$/);
+  if (!match) fail(`unsupported aspect ratio '${value}'`);
+  const ratio = Number(match[1]) / Number(match[2]);
+  return { name, width: 7.5 * ratio, height: 7.5 };
+}
+
+function scaleOptions(options, sx, sy) {
+  const scaled = { ...(options || {}) };
+  for (const key of ["x", "w"]) if (typeof scaled[key] === "number") scaled[key] *= sx;
+  for (const key of ["y", "h"]) if (typeof scaled[key] === "number") scaled[key] *= sy;
+  if (typeof scaled.fontSize === "number") scaled.fontSize *= Math.min(sx, sy);
+  return scaled;
+}
+
+function makeResponsive(slide, sx, sy) {
+  const addText = slide.addText.bind(slide);
+  const addShape = slide.addShape.bind(slide);
+  const addImage = slide.addImage.bind(slide);
+  const addChart = slide.addChart.bind(slide);
+  const addTable = slide.addTable.bind(slide);
+  slide.addText = (text, options) => addText(text, scaleOptions(options, sx, sy));
+  slide.addShape = (type, options) => addShape(type, scaleOptions(options, sx, sy));
+  slide.addImage = (options) => addImage(scaleOptions(options, sx, sy));
+  slide.addChart = (type, data, options) => addChart(type, data, scaleOptions(options, sx, sy));
+  slide.addTable = (rows, options) => addTable(rows, scaleOptions(options, sx, sy));
+  return slide;
+}
 
 function fail(message) {
   process.stderr.write(`error: ${message}\n`);
@@ -41,7 +74,10 @@ function fitText(text, limit) {
 }
 
 function imageSizingContain(imagePath, x, y, w, h) {
-  return { path: imagePath, x, y, w, h, sizing: "contain" };
+  const dimensions = sizeOf(imagePath);
+  const scale = Math.min(w / dimensions.width, h / dimensions.height);
+  const shownW = dimensions.width * scale, shownH = dimensions.height * scale;
+  return { path: imagePath, x: x + (w - shownW) / 2, y: y + (h - shownH) / 2, w: shownW, h: shownH };
 }
 
 function addSlideChrome(slide, pptx, theme, number, title, sourceIds) {
@@ -59,7 +95,8 @@ function addBullets(slide, points, theme, box = {}) {
     text: fitText(typeof point === "string" ? point : point.text, 180),
     options: { bullet: { indent: 18 }, hanging: 4, breakLine: true },
   }));
-  slide.addText(items.length ? items : [{ text: "Add the key evidence for this slide.", options: {} }], {
+  if (!items.length) return;
+  slide.addText(items, {
     x: box.x ?? 0.85, y: box.y ?? 1.38, w: box.w ?? 5.4, h: box.h ?? 4.8,
     fontFace: theme.font, fontSize: box.fontSize ?? 19, color: theme.ink,
     breakLine: false, valign: "mid", margin: 0.08, paraSpaceAfterPt: 12, fit: "shrink",
@@ -74,17 +111,18 @@ function resolveImage(project, value) {
   return fs.existsSync(absolute) ? absolute : null;
 }
 
-function addImageOrStatement(slide, pptx, slideData, theme, project) {
+function addImageOrStatement(slide, pptx, slideData, theme, project, reverse = false) {
+  const panelX = reverse ? 0.85 : 6.85;
   const image = resolveImage(project, slideData.image);
   if (image) {
-    slide.addShape(pptx.ShapeType.rect, { x: 6.75, y: 1.28, w: 5.8, h: 4.95, line: { color: theme.muted, transparency: 75 }, fill: { color: theme.surface } });
-    slide.addImage(imageSizingContain(image, 6.85, 1.38, 5.6, 4.75));
+    slide.addShape(pptx.ShapeType.rect, { x: panelX - 0.1, y: 1.28, w: 5.8, h: 4.95, line: { color: theme.muted, transparency: 75 }, fill: { color: theme.surface } });
+    slide.addImage(imageSizingContain(image, panelX, 1.38, 5.6, 4.75));
     return;
   }
   const statement = slideData.visual || slideData.key_message || slideData.action_title || "";
-  slide.addShape(pptx.ShapeType.rect, { x: 6.85, y: 1.55, w: 5.05, h: 3.7, line: { color: theme.accent, transparency: 100 }, fill: { color: theme.surface } });
-  slide.addShape(pptx.ShapeType.rect, { x: 6.85, y: 1.55, w: 0.1, h: 3.7, line: { color: theme.accent, transparency: 100 }, fill: { color: theme.accent } });
-  slide.addText(fitText(statement, 140), { x: 7.25, y: 1.92, w: 4.2, h: 2.9, fontFace: theme.font, fontSize: 25, bold: true, color: theme.ink, valign: "mid", margin: 0, fit: "shrink" });
+  slide.addShape(pptx.ShapeType.rect, { x: panelX, y: 1.55, w: 5.05, h: 3.7, line: { color: theme.accent, transparency: 100 }, fill: { color: theme.surface } });
+  slide.addShape(pptx.ShapeType.rect, { x: panelX, y: 1.55, w: 0.1, h: 3.7, line: { color: theme.accent, transparency: 100 }, fill: { color: theme.accent } });
+  slide.addText(fitText(statement, 140), { x: panelX + 0.4, y: 1.92, w: 4.2, h: 2.9, fontFace: theme.font, fontSize: 25, bold: true, color: theme.ink, valign: "mid", margin: 0, fit: "shrink" });
 }
 
 function addMetrics(slide, pptx, metrics, theme) {
@@ -158,6 +196,31 @@ function addProcess(slide, pptx, points, theme) {
   });
 }
 
+function addDiagram(slide, pptx, diagram, theme) {
+  const nodes = (diagram.nodes || []).slice(0, 7);
+  if (!nodes.length) return false;
+  const lookup = new Map();
+  const width = 11.4 / nodes.length;
+  nodes.forEach((node, index) => lookup.set(String(node.id ?? index), { x: 0.9 + index * width, y: 2.25, w: Math.min(1.65, width - 0.18), h: 1.05, node }));
+  for (const edge of diagram.edges || []) {
+    const from = lookup.get(String(edge.from)), to = lookup.get(String(edge.to));
+    if (!from || !to) continue;
+    slide.addShape(pptx.ShapeType.line, { x: from.x + from.w, y: from.y + from.h / 2, w: to.x - from.x - from.w, h: to.y - from.y, line: { color: theme.muted, width: 1.5, beginArrowType: "none", endArrowType: "triangle" } });
+    if (edge.label) slide.addText(fitText(edge.label, 28), { x: from.x + from.w, y: from.y + 0.1, w: Math.max(0.5, to.x - from.x - from.w), h: 0.25, fontFace: theme.font, fontSize: 9, color: theme.muted, align: "center", margin: 0, fit: "shrink" });
+  }
+  for (const entry of lookup.values()) {
+    slide.addShape(pptx.ShapeType.roundRect, { x: entry.x, y: entry.y, w: entry.w, h: entry.h, rectRadius: 0.04, line: { color: theme.accent, width: 1.5 }, fill: { color: theme.surface } });
+    slide.addText(fitText(entry.node.label || entry.node.text || entry.node.id, 55), { x: entry.x + 0.08, y: entry.y + 0.12, w: entry.w - 0.16, h: entry.h - 0.24, fontFace: theme.font, fontSize: 15, bold: true, color: theme.ink, align: "center", valign: "mid", margin: 0.02, fit: "shrink" });
+  }
+  return true;
+}
+
+function addQuote(slide, pptx, data, theme) {
+  const quote = data.quote || data.supporting_points?.[0] || data.visual || "";
+  slide.addText(`“${fitText(quote, 260)}”`, { x: 1.25, y: 1.65, w: 10.8, h: 3.45, fontFace: theme.font, fontSize: 30, bold: true, italic: true, color: theme.ink, align: "center", valign: "mid", margin: 0.1, fit: "shrink" });
+  if (data.attribution) slide.addText(fitText(data.attribution, 90), { x: 6.7, y: 5.35, w: 4.9, h: 0.45, fontFace: theme.font, fontSize: 16, color: theme.muted, align: "right", margin: 0, fit: "shrink" });
+}
+
 function addCover(slide, pptx, data, deck, theme) {
   slide.background = { color: theme.bg };
   slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.16, h: 7.5, line: { color: theme.accent, transparency: 100 }, fill: { color: theme.accent } });
@@ -188,7 +251,9 @@ async function main() {
   if (!theme) fail(`unknown theme '${themeName}'; choose ${Object.keys(THEMES).join(", ")}`);
 
   const pptx = new PptxGenJS();
-  pptx.layout = "LAYOUT_WIDE";
+  const canvas = canvasFor(brief.aspect_ratio || "16:9");
+  pptx.defineLayout({ name: "PPT_GEN_CANVAS", width: canvas.width, height: canvas.height });
+  pptx.layout = "PPT_GEN_CANVAS";
   pptx.author = brief.author || "ppt-gen";
   pptx.subject = brief.subject || brief.objective || "";
   pptx.title = brief.title || storyboard.deck?.title || "Presentation";
@@ -197,7 +262,7 @@ async function main() {
   pptx.theme = { headFontFace: theme.font, bodyFontFace: theme.font, lang: pptx.lang };
 
   storyboard.slides.forEach((data, index) => {
-    const slide = pptx.addSlide();
+    const slide = makeResponsive(pptx.addSlide(), canvas.width / 13.333, canvas.height / 7.5);
     const role = String(data.role || "content").toLowerCase();
     const points = Array.isArray(data.supporting_points) ? data.supporting_points : [];
     const sources = Array.isArray(data.source_ids) ? data.source_ids : [];
@@ -205,7 +270,11 @@ async function main() {
     else if (["section", "section_divider"].includes(role)) addSection(slide, pptx, data, theme, index + 1);
     else {
       addSlideChrome(slide, pptx, theme, index + 1, data.action_title || data.title || "", sources);
-      if (data.chart && addChart(slide, pptx, data.chart, theme)) {
+      if (data.diagram && addDiagram(slide, pptx, data.diagram, theme)) {
+        // Diagram layout is complete.
+      } else if (role === "quote") {
+        addQuote(slide, pptx, data, theme);
+      } else if (data.chart && addChart(slide, pptx, data.chart, theme)) {
         // Chart layout is complete.
       } else if (data.table && addTable(slide, data.table, theme)) {
         // Table layout is complete.
@@ -215,8 +284,9 @@ async function main() {
       } else if (role === "comparison") addComparison(slide, pptx, data.columns || [], points, theme);
       else if (role === "process") addProcess(slide, pptx, points, theme);
       else {
-        addBullets(slide, points, theme);
-        addImageOrStatement(slide, pptx, data, theme, args.project);
+        const reverse = index % 2 === 0;
+        addBullets(slide, points, theme, reverse ? { x: 6.95, y: 1.38, w: 5.35, h: 4.8 } : {});
+        addImageOrStatement(slide, pptx, data, theme, args.project, reverse);
       }
     }
     const notes = [data.speaker_note || "", sources.length ? `[Sources]\n${sources.map((id) => `- ${id}`).join("\n")}` : ""].filter(Boolean).join("\n\n");
@@ -225,7 +295,7 @@ async function main() {
 
   fs.mkdirSync(path.dirname(args.output), { recursive: true });
   await pptx.writeFile({ fileName: args.output });
-  process.stdout.write(`Created ${args.output}\nSlides: ${storyboard.slides.length}\nTheme: ${themeName}\n`);
+  process.stdout.write(`Created ${args.output}\nSlides: ${storyboard.slides.length}\nTheme: ${themeName}\nAspect ratio: ${canvas.name}\n`);
 }
 
 main().catch((error) => fail(error.stack || error.message));

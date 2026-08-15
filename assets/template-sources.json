@@ -408,6 +408,29 @@
         "Web-rendered output"
       ],
       "entrypoint": "Inspect each template directory and its theme.md before selecting a design"
+    },
+    {
+      "id": "html-ppt-skill",
+      "name": "HTML PPT Studio Skill",
+      "repo": "https://github.com/xcugongchen/html-ppt-skill",
+      "clone_url": "https://github.com/xcugongchen/html-ppt-skill.git",
+      "ref": "main",
+      "route": "html",
+      "kind": "template-engine",
+      "license": "MIT",
+      "counts": {
+        "themes": 36,
+        "layouts": 31,
+        "example_decks": 15
+      },
+      "best_for": "Technical talks, academic reports, product demos, and browser presentations needing presenter mode and animation",
+      "features": [
+        "36 themes and 31 reusable layouts",
+        "15 full-deck templates",
+        "47 named animations",
+        "Presenter mode with notes and timer"
+      ],
+      "entrypoint": "Read SKILL.md and inspect themes, layouts, templates, and animation guidance before adapting output"
     }
   ]
 }

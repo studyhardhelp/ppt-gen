@@ -45,6 +45,8 @@ Never fabricate facts, citations, customer names, performance metrics, or quotat
 
 Use `python3 scripts/ingest.py <sources...> --output <project>/work/ingested.json` to normalize Markdown, text, JSON, CSV/TSV, HTML, DOCX, PPTX/POTX, PDF, or URL sources when direct inspection is inconvenient. Treat extraction as evidence collection, not automatic fact validation.
 
+For a direct source-to-deck workflow, run `python3 scripts/ppt_gen.py create <project> <sources...> --title "..." --slides <count> --scenario <scenario> --render`. Review the generated storyboard before delivery; deterministic extraction and outlining do not replace factual judgment.
+
 ## Define the visual system
 
 Read [references/visual-design.md](references/visual-design.md) before designing a new deck or substantially restyling one.
@@ -65,6 +67,8 @@ python3 scripts/ppt_gen.py build <project-dir> --render
 
 The command reads `work/brief.json` and `work/storyboard.json`, writes the selected output route, checks PPTX packages, and optionally renders every slide. Do not bypass storyboard completion merely because the builder accepts sparse fields.
 
+Convert existing artifacts with `python3 scripts/ppt_gen.py convert <source> <output>`. Supported pairs are PPTX to HTML/PDF and HTML to PDF/PPTX. Treat HTML-to-PPTX as image-first unless native reconstruction is separately requested.
+
 For native PPTX:
 
 - prefer editable text, shapes, connectors, charts, tables, and diagrams;
@@ -77,7 +81,8 @@ For template PPTX, profile first, prepare addressed edits, and fill without flat
 
 ```bash
 python3 scripts/ppt_gen.py profile-template template.pptx --output work/template-profile.json
-python3 scripts/template_fill.py template.pptx work/edits.json output/deck.pptx --profile work/template-profile.json --strict
+python3 scripts/ppt_gen.py template-plan work/template-profile.json work/storyboard.json work/edits.json
+python3 scripts/pptx_edit.py template.pptx work/edits.json output/deck.pptx --profile work/template-profile.json --strict
 ```
 
 For HTML, image-first, and reconstruction work, follow the selected route's confirmation, asset, editability, and verification rules in [references/non-native-routes.md](references/non-native-routes.md).
@@ -90,6 +95,7 @@ For PPTX output, run:
 
 ```bash
 python3 scripts/pptx_check.py path/to/deck.pptx
+python3 scripts/font_check.py path/to/deck.pptx
 python3 scripts/render_deck.py path/to/deck.pptx --output-dir path/to/rendered --clean
 ```
 

@@ -9,7 +9,9 @@
 - Test desktop and projected aspect ratios. Export a PDF fallback when requested.
 - If exporting to PPTX, verify the converted file independently and disclose lost motion or flattened effects.
 
-Build with `python3 scripts/ppt_gen.py build <project> --route html`. The self-contained runtime includes 36 selectable themes, keyboard navigation, progress, fullscreen (`F`), overview (`O`), print/PDF styling, and presenter mode (`S`) with notes and a timer.
+Build with `python3 scripts/ppt_gen.py build <project> --route html`. The self-contained runtime includes 36 selectable themes, keyboard navigation, progress, fullscreen (`F`), overview (`O`), editable text mode (`E`), save (`Cmd/Ctrl+S`), print/PDF styling, per-slide transitions, and a separate presenter window (`S`) with notes, next-slide title, and timer.
+
+Convert PPTX to a fidelity-first HTML deck with `ppt_gen.py convert source.pptx output.html`. Convert HTML to PDF or image-first PPTX with the same command. Preserve and disclose flattening boundaries.
 
 ## Image-first PPTX
 
@@ -21,7 +23,7 @@ Build with `python3 scripts/ppt_gen.py build <project> --route html`. The self-c
 - Assemble images without recompression where possible and add notes separately.
 - Offer editable reconstruction only as a separate, higher-cost step.
 
-Build a directory of ordered PNG/JPG slides with `python3 scripts/ppt_gen.py build <project> --route image-first --images <directory>`. The result is a PPTX with one full-slide image per page; disclose that objects inside the image are not editable.
+Build a directory of ordered PNG/JPG slides with `python3 scripts/ppt_gen.py build <project> --route image-first --images <directory>`. Use `--manifest` for per-slide paths, notes, sources, alternative text, background, and aspect ratio. The result is a PPTX with one contained image per page; disclose that objects inside the image are not editable.
 
 ## Editable reconstruction
 
@@ -32,4 +34,4 @@ Build a directory of ordered PNG/JPG slides with `python3 scripts/ppt_gen.py bui
 - Compare each rebuilt slide against the source image at full size and as an overlay when possible.
 - Expect multiple correction passes and disclose areas that remain flattened.
 
-Run `python3 scripts/ppt_gen.py build <project> --route reconstruction --source <pdf-or-images>`. This route requires Tesseract and Pillow, preserves each source page as an image, covers recognized text regions with sampled local colors, and places editable OCR text over them. Treat the result as a first reconstruction pass and compare every page at full size.
+Run `python3 scripts/ppt_gen.py build <project> --route reconstruction --source <pdf-or-images>`. This route uses Tesseract or macOS Vision, preserves each source page as an image, covers recognized text regions with sampled local colors, and places editable OCR text over them. Treat the result as a first reconstruction pass and compare every page at full size; complex artwork remains flattened.

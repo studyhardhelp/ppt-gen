@@ -17,7 +17,10 @@ import build_html
 import compare_renders
 import ingest
 import pptx_check
+import pptx_edit
+import storyboard
 import template_fill
+import template_plan
 import template_profile
 import templates
 
@@ -75,12 +78,15 @@ class SkillTests(unittest.TestCase):
             profile = template_profile.profile(source)
             self.assertEqual(profile["slides"][0]["shapes"][0]["shape_id"], 2)
             spec = root / "edits.json"
-            spec.write_text(json.dumps({"edits": [{"slide": 1, "address": {"shape_id": 2, "paragraph": 0, "run": 0}, "expected_text": "Question 1", "new_text": "Validated title"}]}), encoding="utf-8")
+            spec.write_text(json.dumps({"edits": [{"slide": 1, "address": {"shape_id": 2, "paragraph": 0, "run": 0}, "expected_text": "Question 1", "new_text": "Validated title", "font_size_pt": 21}]}), encoding="utf-8")
             result = template_fill.fill(source, spec, output, None, True)
             self.assertEqual(result["replacements"], 1)
             with zipfile.ZipFile(output) as archive:
-                text = " ".join(node.text or "" for node in ET.fromstring(archive.read("ppt/slides/slide1.xml")).iter() if node.tag.endswith("}t"))
+                root = ET.fromstring(archive.read("ppt/slides/slide1.xml"))
+                text = " ".join(node.text or "" for node in root.iter() if node.tag.endswith("}t"))
+                size = root.find(".//a:rPr", template_fill.NS).attrib["sz"]
             self.assertEqual(text, "Validated title")
+            self.assertEqual(size, "2100")
 
     def test_html_builder_has_themes_and_presenter_mode(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -94,6 +100,9 @@ class SkillTests(unittest.TestCase):
             self.assertEqual(rendered.count('<option value="'), 36)
             self.assertIn("presenter", rendered)
             self.assertIn("e.key.toLowerCase()==='s'", rendered)
+            self.assertIn("openPresenter", rendered)
+            self.assertIn("toggleEdit", rendered)
+            self.assertIn("saveEdited", rendered)
 
     def test_ingest_markdown_and_csv(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -127,6 +136,35 @@ class SkillTests(unittest.TestCase):
             local.mkdir(parents=True)
             make_pptx(local / "template.pptx", "Demo")
             self.assertEqual(len(templates.discover_local(root / "local")), 1)
+
+    def test_storyboard_generation_does_not_duplicate_source_blocks(self) -> None:
+        ingested = {"documents": [{"source": "/tmp/source.md", "kind": "md", "text": "# Finding\nUsage reached 72%.\n\n# Action\nIntegrate three workflows.", "tables": []}]}
+        brief = {"title": "Review", "decision_or_action": "Approve integrations"}
+        result, ledger = storyboard.make_storyboard(ingested, brief, 10, "executive")
+        titles = [slide["action_title"] for slide in result["slides"]]
+        self.assertEqual(len(titles), len(set(titles)))
+        self.assertIn("S1", ledger)
+
+    def test_template_plan_and_slide_duplication(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, output = root / "source.pptx", root / "output.pptx"
+            make_pptx(source, "Template title")
+            profile = template_profile.profile(source)
+            story = {"slides": [{"number": 1, "role": "cover", "action_title": "Final title", "supporting_points": []}]}
+            planned = template_plan.plan(profile, story)
+            self.assertEqual(planned["selected_slides"], [1])
+            self.assertEqual(planned["edits"][0]["new_text"], "Final title")
+            spec = root / "spec.json"
+            spec.write_text(json.dumps({"duplicate_slides": [1]}), encoding="utf-8")
+            report = pptx_edit.edit_pptx(source, spec, output, None, True)
+            self.assertEqual(report["duplicated_slides"], 1)
+            self.assertEqual(pptx_check.inspect(output, 900)["slide_count"], 2)
+
+    def test_template_search_is_ranked_not_all_terms_required(self) -> None:
+        data = {"templates": [{"id": "academic", "name": "Academic deck", "route": "html", "kind": "template", "license": "MIT", "best_for": "research", "features": []}, {"id": "business", "name": "Business", "route": "pptx", "kind": "template", "license": "MIT", "best_for": "annual report", "features": []}]}
+        result = templates.select(data, None, None, "academic research")
+        self.assertEqual(result[0]["id"], "academic")
 
 
 if __name__ == "__main__":

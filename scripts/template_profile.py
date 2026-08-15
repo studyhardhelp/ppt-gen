@@ -19,6 +19,7 @@ NS = {
     "pr": "http://schemas.openxmlformats.org/package/2006/relationships",
 }
 RID = f"{{{NS['r']}}}id"
+REMBED = f"{{{NS['r']}}}embed"
 
 
 def xml(archive: zipfile.ZipFile, name: str) -> ET.Element:
@@ -54,8 +55,12 @@ def ordered_slides(archive: zipfile.ZipFile) -> list[str]:
 
 
 def shape_profile(shape: ET.Element, slide_number: int) -> dict:
-    props = shape.find("p:nvSpPr/p:cNvPr", NS)
-    placeholder = shape.find("p:nvSpPr/p:nvPr/p:ph", NS)
+    kind = shape.tag.rsplit("}", 1)[-1]
+    prop_paths = {"sp": "p:nvSpPr/p:cNvPr", "pic": "p:nvPicPr/p:cNvPr", "graphicFrame": "p:nvGraphicFramePr/p:cNvPr", "cxnSp": "p:nvCxnSpPr/p:cNvPr", "grpSp": "p:nvGrpSpPr/p:cNvPr"}
+    placeholder_paths = {"sp": "p:nvSpPr/p:nvPr/p:ph", "pic": "p:nvPicPr/p:nvPr/p:ph", "graphicFrame": "p:nvGraphicFramePr/p:nvPr/p:ph"}
+    xfrm_paths = {"sp": "p:spPr/a:xfrm", "pic": "p:spPr/a:xfrm", "graphicFrame": "p:xfrm", "cxnSp": "p:spPr/a:xfrm", "grpSp": "p:grpSpPr/a:xfrm"}
+    props = shape.find(prop_paths.get(kind, ""), NS) if kind in prop_paths else None
+    placeholder = shape.find(placeholder_paths.get(kind, ""), NS) if kind in placeholder_paths else None
     shape_id = int(props.attrib.get("id", 0)) if props is not None else 0
     paragraphs = []
     for p_index, paragraph in enumerate(shape.findall(".//a:p", NS)):
@@ -63,22 +68,32 @@ def shape_profile(shape: ET.Element, slide_number: int) -> dict:
         for r_index, run in enumerate(paragraph.findall("a:r", NS)):
             node = run.find("a:t", NS)
             if node is not None:
-                runs.append({"run": r_index, "text": node.text or "", "slot_id": f"s{slide_number}_sh{shape_id}_p{p_index}r{r_index}"})
+                properties = run.find("a:rPr", NS)
+                font_size = int(properties.attrib.get("sz", 1800)) / 100 if properties is not None else 18
+                runs.append({"run": r_index, "text": node.text or "", "slot_id": f"s{slide_number}_sh{shape_id}_p{p_index}r{r_index}", "font_size_pt": font_size})
         if runs:
             paragraphs.append({"paragraph": p_index, "text": "".join(item["text"] for item in runs), "runs": runs})
-    xfrm = shape.find("p:spPr/a:xfrm", NS)
+    xfrm = shape.find(xfrm_paths.get(kind, ""), NS) if kind in xfrm_paths else None
     bounds = None
     if xfrm is not None:
         off, ext = xfrm.find("a:off", NS), xfrm.find("a:ext", NS)
         if off is not None and ext is not None:
             bounds = {"x": int(off.attrib.get("x", 0)), "y": int(off.attrib.get("y", 0)), "cx": int(ext.attrib.get("cx", 0)), "cy": int(ext.attrib.get("cy", 0))}
-    return {
+    record = {
+        "kind": kind,
         "shape_id": shape_id,
         "name": props.attrib.get("name", "") if props is not None else "",
         "placeholder": ({"type": placeholder.attrib.get("type", "body"), "idx": int(placeholder.attrib.get("idx", 0))} if placeholder is not None else None),
         "bounds_emu": bounds,
         "paragraphs": paragraphs,
     }
+    blip = shape.find(".//a:blip", NS)
+    chart = shape.find(".//{http://schemas.openxmlformats.org/drawingml/2006/chart}chart", NS)
+    record["image_relationship_id"] = blip.attrib.get(REMBED) if blip is not None else None
+    record["chart_relationship_id"] = chart.attrib.get(RID) if chart is not None else None
+    record["is_table"] = shape.find(".//a:tbl", NS) is not None
+    record["alt_text"] = props.attrib.get("descr", "") if props is not None else ""
+    return record
 
 
 def theme_profile(root: ET.Element) -> dict:
@@ -121,7 +136,8 @@ def profile(path: Path) -> dict:
             root = xml(archive, name)
             related = rels(archive, name)
             layout = next((resolve(name, target) for rid, target in related.items() if "slideLayout" in target), None)
-            shapes = [shape_profile(shape, index) for shape in root.findall("p:cSld/p:spTree/p:sp", NS)]
+            accepted = {"sp", "pic", "graphicFrame", "cxnSp", "grpSp"}
+            shapes = [shape_profile(shape, index) for shape in root.find("p:cSld/p:spTree", NS).iter() if shape.tag.rsplit("}", 1)[-1] in accepted] if root.find("p:cSld/p:spTree", NS) is not None else []
             report["slides"].append({"number": index, "part": name, "layout": layout, "text": " ".join(node.text or "" for node in root.findall(".//a:t", NS)).strip(), "shapes": shapes})
         return report
 

@@ -5,6 +5,7 @@
   "description": "Pinned runtime dependency for the ppt-gen Codex skill",
   "license": "MIT",
   "dependencies": {
+    "image-size": "1.2.1",
     "pptxgenjs": "4.0.1"
   }
 }
