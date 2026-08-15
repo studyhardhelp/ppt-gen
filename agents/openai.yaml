@@ -1,0 +1,4 @@
+interface:
+  display_name: "PPT Generator"
+  short_description: "Create polished, editable, verified presentation decks"
+  default_prompt: "Use $ppt-gen to turn my source material into a polished, editable presentation deck."
