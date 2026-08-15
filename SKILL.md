@@ -49,7 +49,7 @@ Read [references/visual-design.md](references/visual-design.md) before designing
 
 Define the canvas, safe margins, grid, spacing, typography, palette, image treatment, chart treatment, and citation style. Match the visual language to the audience and subject. Prefer real product imagery, meaningful diagrams, data, or deliberate typography over decorative filler. Keep layouts varied but related and make the primary message obvious at thumbnail size.
 
-When the user requests a template, brand style, or visual options, read [references/templates.md](references/templates.md). Run `python3 scripts/templates.py stats` to inspect catalog coverage, then use `python3 scripts/templates.py search "<terms>"` to shortlist native PPTX, HTML, Marp, or Slidev sources. Fetch only the selected permissively licensed source, inspect it before execution, record its commit, and verify the adapted deck independently. Do not copy example content or assume that a repository license grants trademark rights.
+When the user requests a template, brand style, or visual options, read [references/templates.md](references/templates.md). Inspect `local-templates/` first when it exists, then run `python3 scripts/templates.py stats` and use `python3 scripts/templates.py search "<terms>"` to shortlist native PPTX, HTML, Marp, or Slidev sources. Fetch only the selected source, inspect it before execution, record its commit, honor its stated usage scope, and verify the adapted deck independently. Do not copy example content or assume that a repository license grants trademark rights.
 
 ## Generate
 

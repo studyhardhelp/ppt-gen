@@ -18,6 +18,12 @@ As of 2026-08-15, the registry contains 20 permissively licensed GitHub sources:
 
 `fetch` clones the selected source but never executes its scripts. Inspect the upstream README, `AGENTS.md`, dependencies, assets, and license before running commands or copying files.
 
+## Local template cache
+
+Inspect `local-templates/` before fetching a remote source. This directory is intentionally ignored by Git so locally licensed, user-supplied, or personal-use template assets cannot be pushed accidentally.
+
+The local Gorden PPT cache is stored at `local-templates/GordenPPTSkill`. Read its `templates/INDEX.md`, shortlist by scene and style, show the corresponding `preview.png` files when the choice is ambiguous, then follow its `SKILL.md` and `references/workflow.md`. Each of its 21 template directories contains `template.pptx`, `detail.json`, `intro.md`, and `preview.png`; use its `scripts/build_pptx.py` workflow to replace addressed text while preserving the original layout.
+
 ## Selection workflow
 
 1. Decide whether the delivery route is native PPTX, HTML, Marp, or Slidev.
